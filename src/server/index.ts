@@ -5,9 +5,17 @@ import allroutes from './routes/core.js';
 import cookieParser from 'cookie-parser';
 import { middleware } from './middleware/authMiddleware.js';
 import { AuthenticatedRequest } from './types/user.js';
+import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT;
+
+app.use(cors({
+    origin: 'http://127.0.0.1:5500',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}))
 
 app.use(express.json());
 app.use(cookieParser());

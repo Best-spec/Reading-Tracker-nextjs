@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { User } from "../types/user.js";
 import { clear } from "node:console";
-import { prisma } from "../prisma.js";
+import {prisma} from "../prisma.js";
 
 
 let users: User[] = [];
@@ -33,28 +33,32 @@ export const authservices = {
                 email: newUser.email,
             },
         });
-
-        // users.push(newUser);
-
         return newUser;
     },
 
-    login: async (username: string, password: string) => {
-            const JWT_SECRET: string = process.env.JWT_SECRET as string;
+    login: async (email: string, password: string) => {
+        const JWT_SECRET: string = process.env.JWT_SECRET as string;
 
-        const user = users.find(u => u.username === username);
+        const user = await prisma.user.findUnique({ where: { email: email } });
+        console.log('พบผู้ใช้ในฐานข้อมูล:', user);
         if (!user) {
             throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!');
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
             throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!');
         }
 
         const payload = { id: user.id, username: user.username };
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 
+        console.log('เข้าสู่ระบบสำเร็จ email:', user.username);
         return { user, token };
     },
+
+    getalluser: async () => {
+        const allusers = await prisma.user.findMany();
+        return allusers;
+    }
 };
