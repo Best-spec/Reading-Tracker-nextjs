@@ -26,6 +26,7 @@ model User {
 // ตารางหนังสือ
 model Book {
   id          String       @id @default(uuid())
+  user_id     String
   title       String
   author      String
   totalPages  Int
