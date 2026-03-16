@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'http';
 import { Request, Response } from 'express';
 import 'dotenv/config';
 import allroutes from './routes/core.js';
@@ -6,9 +7,16 @@ import cookieParser from 'cookie-parser';
 import { middleware } from './middleware/authMiddleware.js';
 import { AuthenticatedRequest } from './types/user.js';
 import cors from 'cors';
+import { OnlineStatusService } from './services/onlineStatusService.js';
+import onlineStatusRoutes, { initializeOnlineStatusRoutes } from './routes/onlineStatus.js';
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.PORT;
+
+const onlineStatusService = new OnlineStatusService(server);
+
+initializeOnlineStatusRoutes(onlineStatusService);
 
 app.use(cors({
     origin: 'http://127.0.0.1:5500',
@@ -28,7 +36,7 @@ app.get('/', middleware, (req: AuthenticatedRequest, res: Response) => {
     res.json({ message: `ยินดีต้อนรับ ${req.user.username}` });
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 

@@ -21,6 +21,8 @@ model User {
   readingLogs   ReadingLog[]
   followers     Follows[]      @relation("following")
   following     Follows[]      @relation("follower")
+  groups        Group[]        @relation("owner")
+  groupMembers  GroupMember[]  @relation("member")
 }
 
 // ตารางหนังสือ
@@ -50,19 +52,75 @@ model ReadingLog {
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  sessions    ReadingSession[]
 
   @@unique([userId, bookId]) // ป้องกัน User คนเดียว Track หนังสือเล่มเดิมซ้ำซ้อน
+}
+
+// ตารางบันทึกเวลาการอ่านแต่ละ session
+model ReadingSession {
+  id            String   @id @default(uuid())
+  readingLogId  String
+  startTime     DateTime @default(now())
+  endTime       DateTime?
+  minutesRead   Int?     // จำนวนนาทีที่อ่าน (คำนวณจาก startTime - endTime)
+  pagesRead     Int?     // จำนวนหน้าที่อ่านใน session นี้
+  section       String?  // section ที่อ่าน (บท/ตอน)
+
+  readingLog    ReadingLog @relation(fields: [readingLogId], references: [id], onDelete: Cascade)
 }
 
 // ระบบ Follow (Social)
 model Follows {
   followerId  String
   followingId String
+  status      FriendStatus @default(PENDING)
 
   follower    User     @relation("follower", fields: [followerId], references: [id])
   following   User     @relation("following", fields: [followingId], references: [id])
 
   @@id([followerId, followingId]) // ใช้ Composite ID ป้องกันการกดติดตามซ้ำ
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+// ตารางกลุ่ม
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User         @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+
+  @@unique([name, ownerId]) // ป้องกันผู้ใช้คนเดียวสร้างกลุ่มชื่อซ้ำ
+}
+
+// ตารางสมาชิกกลุ่ม
+model GroupMember {
+  id       String      @id @default(uuid())
+  groupId  String
+  userId   String
+  role     GroupRole   @default(MEMBER)
+  joinedAt DateTime    @default(now())
+
+  group    Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User  @relation("member", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId]) // ป้องกันสมาชิกซ้ำในกลุ่มเดียวกัน
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
 }
 
 enum Status {

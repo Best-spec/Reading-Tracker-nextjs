@@ -1,27 +1,36 @@
 // --- Data Logic ---
-const STORAGE_BOOKS_KEY = 'readflow_books';
+let books = [];
+let isLoading = false;
 
-function getSavedBooks() {
+async function loadBooks() {
     try {
-        const raw = localStorage.getItem(STORAGE_BOOKS_KEY);
-        return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-        console.warn('ไม่สามารถอ่านข้อมูลหนังสือ', e);
-        return null;
+        isLoading = true;
+        const data = await ReadFlowAPI.Book.getAll();
+        books = data.map(book => ({
+            id: book.id,
+            title: book.title,
+            author: book.author,
+            totalPages: book.total_pages,
+            readPages: book.current_page || 0,
+            cover: book.cover_url || 'https://via.placeholder.com/70x100?text=No+Cover',
+            readMinutes: book.reading_time || 0,
+            status: book.status
+        }));
+        renderBooks();
+    } catch (error) {
+        console.error('Error loading books:', error);
+        alert('ไม่สามารถโหลดข้อมูลหนังสือได้');
+    } finally {
+        isLoading = false;
     }
 }
 
-function saveBooks(data) {
-    localStorage.setItem(STORAGE_BOOKS_KEY, JSON.stringify(data));
-}
-
-let books = getSavedBooks();
-if (!books || books.length === 0) {
-    books = [
-        { id: 1, title: "The Psychology of Money", author: "Morgan Housel", totalPages: 300, readPages: 150, cover: "https://images.unsplash.com/photo-1592492159418-39f319320569?w=200&h=300&fit=crop", readMinutes: 180 },
-        { id: 2, title: "Deep Work", author: "Cal Newport", totalPages: 280, readPages: 238, cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=200&h=300&fit=crop", readMinutes: 220 }
+// Fallback data for offline mode
+function getFallbackBooks() {
+    return [
+        { id: 1, title: "The Psychology of Money", author: "Morgan Housel", totalPages: 300, readPages: 150, cover: "https://images.unsplash.com/photo-1592492159418-39f319320569?w=200&h=300&fit=crop", readMinutes: 180, status: 'READING' },
+        { id: 2, title: "Deep Work", author: "Cal Newport", totalPages: 280, readPages: 238, cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=200&h=300&fit=crop", readMinutes: 220, status: 'READING' }
     ];
-    saveBooks(books);
 }
 
 // --- Sidebar ---
@@ -117,45 +126,51 @@ function closeModal() {
     document.getElementById('book-modal').style.display = 'none';
 }
 
-document.getElementById('book-form').addEventListener('submit', (e) => {
+document.getElementById('book-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
     const bookData = {
         title: document.getElementById('title').value,
         author: document.getElementById('author').value,
         totalPages: parseInt(document.getElementById('total-pages').value),
-        readPages: parseInt(document.getElementById('read-pages').value),
-        cover: document.getElementById('cover-url').value
+        current_page: parseInt(document.getElementById('read-pages').value),
+        coverUrl: document.getElementById('cover-url').value
     };
 
-    if (id) {
-        // Update
-        const index = books.findIndex(b => b.id == id);
-        books[index] = { ...books[index], ...bookData };
-    } else {
-        // Add
-        books.push({ id: Date.now(), ...bookData });
+    try {
+        if (id) {
+            // Update via API
+            await ReadFlowAPI.Book.update(id, bookData);
+        } else {
+            // Create via API
+            await ReadFlowAPI.Book.create(bookData);
+        }
+        closeModal();
+        await loadBooks();
+    } catch (error) {
+        console.error('Error saving book:', error);
+        alert('ไม่สามารถบันทึกข้อมูลหนังสือได้');
     }
-
-    saveBooks(books);
-    closeModal();
-    renderBooks();
 });
 
 function editBook(id) {
     openModal(id);
 }
 
-function deleteBook(id) {
+async function deleteBook(id) {
     if (confirm('จะลบหนังสือเล่มนี้จริงๆ เหรอ?')) {
-        books = books.filter(b => b.id !== id);
-        saveBooks(books);
-        renderBooks();
+        try {
+            await ReadFlowAPI.Book.delete(id);
+            await loadBooks();
+        } catch (error) {
+            console.error('Error deleting book:', error);
+            alert('ไม่สามารถลบหนังสือได้');
+        }
     }
 }
 
 // --- Init ---
-window.onload = () => {
+window.onload = async () => {
     renderSidebar();
-    renderBooks();
+    await loadBooks();
 };

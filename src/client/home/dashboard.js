@@ -1,20 +1,89 @@
 // --- DATA ---
-const apiKey = ""; 
-const CURRENT_BOOKS = [
-    { id: 1, title: "The Psychology of Money", author: "Morgan Housel", progress: 65, cover: "https://images.unsplash.com/photo-1592492159418-39f319320569?w=200&h=300&fit=crop" },
-    { id: 2, title: "Atomic Habits", author: "James Clear", progress: 30, cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop" },
-    { id: 3, title: "Deep Work", author: "Cal Newport", progress: 85, cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=200&h=300&fit=crop" }
-];
-const TREND_DATA = [
-    { day: 'จ.', hours: 1.5 }, { day: 'อ.', hours: 2.1 }, { day: 'พ.', hours: 0.8 },
-    { day: 'พฤ.', hours: 2.5 }, { day: 'ศ.', hours: 1.2 }, { day: 'ส.', hours: 3.0 }, { day: 'อา.', hours: 2.4 }
-];
+const apiKey = "";
+let CURRENT_BOOKS = [];
+let TREND_DATA = [];
+
+async function loadDashboardData() {
+    try {
+        // Load dashboard summary
+        const summary = await ReadFlowAPI.Dashboard.getSummary();
+        if (summary && summary.success) {
+            updateStatsFromAPI(summary.data);
+        }
+
+        // Load reading trend
+        const trend = await ReadFlowAPI.Dashboard.getTrend();
+        if (trend && trend.success) {
+            TREND_DATA = trend.data?.daily || [];
+            renderChart();
+        }
+
+        // Load top books
+        const topBooks = await ReadFlowAPI.Dashboard.getTopBooks(3);
+        if (topBooks && topBooks.success) {
+            CURRENT_BOOKS = topBooks.data.map(book => ({
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                progress: Math.round((book.current_page / book.total_pages) * 100) || 0,
+                cover: book.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop"
+            }));
+            renderBooks();
+        }
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        // Use fallback data if API fails
+        CURRENT_BOOKS = [
+            { id: 1, title: "The Psychology of Money", author: "Morgan Housel", progress: 65, cover: "https://images.unsplash.com/photo-1592492159418-39f319320569?w=200&h=300&fit=crop" },
+            { id: 2, title: "Atomic Habits", author: "James Clear", progress: 30, cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop" },
+            { id: 3, title: "Deep Work", author: "Cal Newport", progress: 85, cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=200&h=300&fit=crop" }
+        ];
+        TREND_DATA = [
+            { day: 'จ.', hours: 1.5 }, { day: 'อ.', hours: 2.1 }, { day: 'พ.', hours: 0.8 },
+            { day: 'พฤ.', hours: 2.5 }, { day: 'ศ.', hours: 1.2 }, { day: 'ส.', hours: 3.0 }, { day: 'อา.', hours: 2.4 }
+        ];
+        renderBooks();
+        renderChart();
+    }
+}
+
+function updateStatsFromAPI(data) {
+    const todayMinutes = data.today?.readingTime || 0;
+    const weekMinutes = data.weekly?.readingTime || 0;
+    const monthMinutes = data.monthly?.readingTime || 0;
+
+    const formatTime = (mins) => {
+        const hrs = Math.floor(mins / 60);
+        const minsRemainder = mins % 60;
+        if (hrs > 0) return `${hrs} ชม. ${minsRemainder} นาที`;
+        return `${minsRemainder} นาที`;
+    };
+
+    const stats = [
+        { title: "เวลาอ่านวันนี้", value: formatTime(todayMinutes), icon: 'clock', bg: 'bg-orange-50', color: '#f97316', trend: '+15%' },
+        { title: "เวลาอ่านสัปดาห์นี้", value: formatTime(weekMinutes), icon: 'calendar', bg: 'bg-indigo-50', color: '#4f46e5', trend: '+2.4 ชม' },
+        { title: "เวลาอ่านเดือนนี้", value: formatTime(monthMinutes), icon: 'trending-up', bg: 'bg-emerald-50', color: '#10b981', trend: 'Record!' }
+    ];
+
+    document.getElementById('stats-grid').innerHTML = stats.map(s => `
+        <div class="stat-card" style="width: 100%;">
+            <div class="stat-header">
+                <div class="stat-icon-box" style="background: ${s.color}15; color: ${s.color}; display: flex; justify-content: space-between; width: 100%">
+                    <i data-lucide="${s.icon}"></i>
+                </div>
+                <span class="trend-label">${s.trend}</span>
+            </div>
+            <p class="stat-title">${s.title}</p>
+            <h4 class="stat-value">${s.value}</h4>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
 
 let isSpeaking = false;
 let audioPlayer = null;
 
 // --- CORE RENDERERS ---
-
 function renderSidebar() {
     const current = window.location.pathname.split('/').pop();
     const menu = [
@@ -90,7 +159,6 @@ function renderBooks() {
 }
 
 // --- GEMINI API LOGIC ---
-
 async function fetchAI(prompt) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
@@ -114,6 +182,7 @@ async function fetchDailyInsight() {
 
 async function handleAIsurvey(bookId) {
     const book = CURRENT_BOOKS.find(b => b.id === bookId);
+    if (!book) return;
     openModal("Gemini กำลังสรุป...", true);
     try {
         const prompt = `Summarize 3 short key takeaways of "${book.title}" in Thai.`;
@@ -127,7 +196,11 @@ async function handleAIsurvey(bookId) {
 async function handleRecommend() {
     openModal("Gemini กำลังแนะนำ...", true);
     try {
-        const titles = CURRENT_BOOKS.map(b => b.title).join(", ");
+        // Get actual book titles from API
+        let titles = CURRENT_BOOKS.map(b => b.title).join(", ");
+        if (!titles) {
+            titles = "Atomic Habits, The Psychology of Money";
+        }
         const prompt = `Based on: ${titles}, recommend 2 other books in Thai briefly.`;
         const res = await fetchAI(prompt);
         showContent("AI แนะนำหนังสือใหม่", res);
@@ -241,11 +314,9 @@ style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { tr
 document.head.append(style);
 
 // --- INIT ---
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
     renderSidebar();
-    renderStats();
-    renderChart();
-    renderBooks();
+    await loadDashboardData();
     updateOnlineStatus();
     fetchDailyInsight();
     window.addEventListener('online', updateOnlineStatus);

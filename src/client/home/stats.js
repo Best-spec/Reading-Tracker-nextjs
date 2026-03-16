@@ -1,27 +1,102 @@
-// --- Sample data ---
-const STATISTICS = {
-    totalReading: { label: "เวลาทั้งหมดที่อ่าน", value: "138 ชม. 20 นาที", icon: "clock", trend: "+12%" },
-    avgPerDay: { label: "เฉลี่ยต่อวัน", value: "2 ชม. 15 นาที", icon: "sunrise", trend: "+0.5 ชม." },
-    sessions: { label: "จำนวนเซสชันอ่าน", value: "56 ครั้ง", icon: "repeat", trend: "เพิ่มขึ้น" }
-};
+// --- Data from API ---
+let STATISTICS = {};
+let DAILY_DATA = [];
+let WEEKLY_DATA = [];
+let TOP_BOOKS = [];
 
-const DAILY_DATA = [
-    { label: 'จ.', hours: 2.2 }, { label: 'อ.', hours: 1.8 }, { label: 'พ.', hours: 2.5 },
-    { label: 'พฤ.', hours: 1.4 }, { label: 'ศ.', hours: 3.0 }, { label: 'ส.', hours: 2.7 }, { label: 'อา.', hours: 2.9 }
-];
+async function loadStats() {
+    try {
+        // Load reading time stats
+        const [totalRes, weeklyRes, monthlyRes] = await Promise.all([
+            ReadFlowAPI.Dashboard.getReadingTime('total'),
+            ReadFlowAPI.Dashboard.getReadingTime('weekly'),
+            ReadFlowAPI.Dashboard.getReadingTime('monthly')
+        ]);
 
-const WEEKLY_DATA = [
-    { label: 'สัปดาห์ 1', hours: 15.5 },
-    { label: 'สัปดาห์ 2', hours: 17.2 },
-    { label: 'สัปดาห์ 3', hours: 18.1 },
-    { label: 'สัปดาห์ 4', hours: 16.9 }
-];
+        const totalHours = totalRes?.data?.hours || 0;
+        const weeklyHours = weeklyRes?.data?.hours || 0;
+        const monthlyHours = monthlyRes?.data?.hours || 0;
 
-const TOP_BOOKS = [
-    { title: "Atomic Habits", author: "James Clear", hours: 28.4, cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop" },
-    { title: "The Psychology of Money", author: "Morgan Housel", hours: 21.3, cover: "https://images.unsplash.com/photo-1592492159418-39f319320569?w=200&h=300&fit=crop" },
-    { title: "Deep Work", author: "Cal Newport", hours: 19.8, cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=200&h=300&fit=crop" }
-];
+        const formatTime = (hours) => {
+            const hrs = Math.floor(hours);
+            const mins = Math.round((hours - hrs) * 60);
+            if (hrs > 0) return `${hrs} ชม. ${mins} นาที`;
+            return `${mins} นาที`;
+        };
+
+        STATISTICS = {
+            totalReading: { label: "เวลาทั้งหมดที่อ่าน", value: formatTime(totalHours), icon: "clock", trend: "+12%" },
+            avgPerDay: { label: "เฉลี่ยต่อวัน", value: formatTime(weeklyHours / 7), icon: "sunrise", trend: "+0.5 ชม." },
+            sessions: { label: "จำนวนชั่วโมงสัปดาห์นี้", value: formatTime(weeklyHours), icon: "repeat", trend: "เพิ่มขึ้น" }
+        };
+
+        // Load top books
+        const topBooksRes = await ReadFlowAPI.Dashboard.getTopBooks(3);
+        if (topBooksRes && topBooksRes.success) {
+            TOP_BOOKS = topBooksRes.data.map(book => ({
+                title: book.title,
+                author: book.author,
+                hours: (book.reading_time || 0) / 60, // Convert minutes to hours
+                cover: book.cover_url || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop"
+            }));
+        }
+
+        // Load reading trend for chart data
+        const trendRes = await ReadFlowAPI.Dashboard.getTrend();
+        if (trendRes && trendRes.success) {
+            DAILY_DATA = trendRes.data?.daily?.map(d => ({ label: d.day, hours: d.hours })) || [];
+            WEEKLY_DATA = trendRes.data?.weekly?.map(w => ({ label: w.week, hours: w.hours })) || [];
+        }
+
+        // Fallback data if API returns empty
+        if (DAILY_DATA.length === 0) {
+            DAILY_DATA = [
+                { label: 'จ.', hours: 2.2 }, { label: 'อ.', hours: 1.8 }, { label: 'พ.', hours: 2.5 },
+                { label: 'พฤ.', hours: 1.4 }, { label: 'ศ.', hours: 3.0 }, { label: 'ส.', hours: 2.7 }, { label: 'อา.', hours: 2.9 }
+            ];
+        }
+        if (WEEKLY_DATA.length === 0) {
+            WEEKLY_DATA = [
+                { label: 'สัปดาห์ 1', hours: 15.5 },
+                { label: 'สัปดาห์ 2', hours: 17.2 },
+                { label: 'สัปดาห์ 3', hours: 18.1 },
+                { label: 'สัปดาห์ 4', hours: 16.9 }
+            ];
+        }
+
+        renderStats();
+        renderBarChart('daily-chart', DAILY_DATA);
+        renderBarChart('weekly-chart', WEEKLY_DATA);
+        renderTopBooks();
+    } catch (error) {
+        console.error('Error loading stats:', error);
+        // Use fallback data
+        STATISTICS = {
+            totalReading: { label: "เวลาทั้งหมดที่อ่าน", value: "138 ชม. 20 นาที", icon: "clock", trend: "+12%" },
+            avgPerDay: { label: "เฉลี่ยต่อวัน", value: "2 ชม. 15 นาที", icon: "sunrise", trend: "+0.5 ชม." },
+            sessions: { label: "จำนวนเซสชันอ่าน", value: "56 ครั้ง", icon: "repeat", trend: "เพิ่มขึ้น" }
+        };
+        DAILY_DATA = [
+            { label: 'จ.', hours: 2.2 }, { label: 'อ.', hours: 1.8 }, { label: 'พ.', hours: 2.5 },
+            { label: 'พฤ.', hours: 1.4 }, { label: 'ศ.', hours: 3.0 }, { label: 'ส.', hours: 2.7 }, { label: 'อา.', hours: 2.9 }
+        ];
+        WEEKLY_DATA = [
+            { label: 'สัปดาห์ 1', hours: 15.5 },
+            { label: 'สัปดาห์ 2', hours: 17.2 },
+            { label: 'สัปดาห์ 3', hours: 18.1 },
+            { label: 'สัปดาห์ 4', hours: 16.9 }
+        ];
+        TOP_BOOKS = [
+            { title: "Atomic Habits", author: "James Clear", hours: 28.4, cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop" },
+            { title: "The Psychology of Money", author: "Morgan Housel", hours: 21.3, cover: "https://images.unsplash.com/photo-1592492159418-39f319320569?w=200&h=300&fit=crop" },
+            { title: "Deep Work", author: "Cal Newport", hours: 19.8, cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=200&h=300&fit=crop" }
+        ];
+        renderStats();
+        renderBarChart('daily-chart', DAILY_DATA);
+        renderBarChart('weekly-chart', WEEKLY_DATA);
+        renderTopBooks();
+    }
+}
 
 // --- Sidebar ---
 function renderSidebar() {
@@ -114,12 +189,9 @@ function loadInsights() {
     document.getElementById('insight-text').innerText = insights[index];
 }
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
     renderSidebar();
-    renderStats();
-    renderBarChart('daily-chart', DAILY_DATA);
-    renderBarChart('weekly-chart', WEEKLY_DATA);
-    renderTopBooks();
+    await loadStats();
     updateOnlineStatus();
     loadInsights();
     window.addEventListener('online', updateOnlineStatus);

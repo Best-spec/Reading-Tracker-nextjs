@@ -1,32 +1,27 @@
-// --- Sample data ---
-let currentUserName = "คุณ";
-
-let groups = [
-    {
-        id: 1,
-        name: "กลุ่มอ่านเช้า",
-        description: "อ่านให้ครบเป้าหมายก่อนเริ่มงาน",
-        joinCode: "MORNING",
-        members: [
-            { name: "มิน", minutes: 380 },
-            { name: "ต้น", minutes: 320 },
-            { name: "คุณ", minutes: 250 }
-        ]
-    },
-    {
-        id: 2,
-        name: "คลับนิยาย",
-        description: "อ่านนิยายแล้วมาคุยกันทุกสุดสัปดาห์",
-        joinCode: "NOVEL",
-        members: [
-            { name: "แพรว", minutes: 430 },
-            { name: "จิว", minutes: 390 },
-            { name: "คุณ", minutes: 180 }
-        ]
-    }
-];
-
+// --- Data from API ---
+let groups = [];
 let selectedGroupId = null;
+
+async function loadGroups() {
+    try {
+        const data = await ReadFlowAPI.Group.getAll();
+        groups = data.map(g => ({
+            id: g.id,
+            name: g.name,
+            description: g.description || 'ไม่มีคำอธิบาย',
+            joinCode: g.join_code || '',
+            members: g.members?.map(m => ({
+                name: m.user?.username || 'ผู้ใช้',
+                minutes: m.total_minutes || 0
+            })) || []
+        }));
+        renderGroups();
+        renderGroupDetails();
+    } catch (error) {
+        console.error('Error loading groups:', error);
+        alert('ไม่สามารถโหลดข้อมูลกลุ่มได้');
+    }
+}
 
 function renderSidebar() {
     const current = window.location.pathname.split('/').pop();
@@ -171,10 +166,28 @@ function copyInviteLink() {
     });
 }
 
-function leaveGroup() {
-    selectedGroupId = null;
-    renderGroups();
-    renderGroupDetails();
+async function leaveGroupAPI() {
+    if (!selectedGroupId) return;
+    if (!confirm('ยืนยันการออกจากกลุ่ม?')) return;
+    
+    try {
+        await ReadFlowAPI.Group.leave(selectedGroupId);
+        selectedGroupId = null;
+        await loadGroups();
+    } catch (error) {
+        console.error('Error leaving group:', error);
+        alert('ไม่สามารถออกจากกลุ่มได้');
+    }
+}
+
+async function createGroup(name, description) {
+    try {
+        await ReadFlowAPI.Group.create({ name, description });
+        await loadGroups();
+    } catch (error) {
+        console.error('Error creating group:', error);
+        alert('ไม่สามารถสร้างกลุ่มได้');
+    }
 }
 
 function generateJoinCode() {
@@ -182,47 +195,28 @@ function generateJoinCode() {
     return Array.from({ length: 6 }).map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
     renderSidebar();
-    renderGroups();
-    renderGroupDetails();
+    await loadGroups();
 
     document.getElementById('search-groups').addEventListener('input', renderGroups);
 
-    document.getElementById('create-group-form').addEventListener('submit', (event) => {
+    document.getElementById('create-group-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const name = document.getElementById('group-name').value.trim();
         const desc = document.getElementById('group-desc').value.trim();
-        const newGroup = {
-            id: Date.now(),
-            name,
-            description: desc || 'ไม่มีคำอธิบาย',
-            joinCode: generateJoinCode(),
-            members: [{ name: currentUserName, minutes: 0 }]
-        };
-        groups.unshift(newGroup);
-        selectedGroupId = newGroup.id;
+        await createGroup(name, desc || 'ไม่มีคำอธิบาย');
+        selectedGroupId = groups[0]?.id || null;
         renderGroups();
         renderGroupDetails();
         closeCreateGroupModal();
     });
 
-    document.getElementById('join-group-form').addEventListener('submit', (event) => {
+    document.getElementById('join-group-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const code = document.getElementById('join-code').value.trim().toUpperCase();
-        const name = document.getElementById('join-name').value.trim() || currentUserName;
-        const group = groups.find(g => g.joinCode.toUpperCase() === code);
-        if (!group) {
-            alert('ไม่พบรหัสกลุ่มที่ระบุ');
-            return;
-        }
-        const exists = group.members.find(m => m.name === name);
-        if (!exists) {
-            group.members.push({ name, minutes: 0 });
-        }
-        selectedGroupId = group.id;
-        renderGroups();
-        renderGroupDetails();
+        // Note: Backend would need an endpoint to join by code
+        alert('ฟีเจอร์เข้าร่วมกลุ่มด้วยรหัสยังไม่พร้อมใช้งาน');
         closeJoinGroupModal();
     });
 

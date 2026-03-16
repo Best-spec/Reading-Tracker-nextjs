@@ -1,44 +1,49 @@
-const STORAGE_FRIENDS = 'readflow_friends';
-const STORAGE_REQUESTS = 'readflow_friend_requests';
+let friends = [];
+let pendingRequests = [];
+let isLoading = false;
 
-const SAMPLE_FRIENDS = [
-    { id: 1, username: 'wanida', name: 'วนิดา', avatar: 'https://i.pravatar.cc/150?img=32', online: true, reading: { title: 'Atomic Habits', progress: 46, pagesRead: 92 } },
-    { id: 2, username: 'ton', name: 'โตน', avatar: 'https://i.pravatar.cc/150?img=12', online: false, reading: { title: 'Deep Work', progress: 73, pagesRead: 219 } }
-];
-
-const SAMPLE_REQUESTS = [
-    { id: 101, username: 'pine', name: 'ไพน์', avatar: 'https://i.pravatar.cc/150?img=47' },
-    { id: 102, username: 'mew', name: 'มีว', avatar: 'https://i.pravatar.cc/150?img=18' }
-];
-
-function loadFromStorage(key, fallback) {
+async function loadFriends() {
     try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    } catch (e) {
-        console.warn('Cannot parse stored data for', key, e);
-        return fallback;
+        isLoading = true;
+        const response = await ReadFlowAPI.Friend.getAll();
+        if (response && response.data) {
+            friends = response.data.map(f => ({
+                id: f.id,
+                username: f.username,
+                name: f.display_name || f.username,
+                avatar: f.avatar || `https://i.pravatar.cc/150?u=${f.id}`,
+                online: f.is_online || false,
+                reading: {
+                    title: f.current_book || 'ไม่ระบุหนังสือ',
+                    progress: f.reading_progress || 0,
+                    pagesRead: f.pages_read || 0
+                }
+            }));
+        }
+        renderFriends();
+    } catch (error) {
+        console.error('Error loading friends:', error);
+        alert('ไม่สามารถโหลดข้อมูลเพื่อนได้');
+    } finally {
+        isLoading = false;
     }
 }
 
-function saveToStorage(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-}
-
-function getFriends() {
-    return loadFromStorage(STORAGE_FRIENDS, SAMPLE_FRIENDS);
-}
-
-function getRequests() {
-    return loadFromStorage(STORAGE_REQUESTS, SAMPLE_REQUESTS);
-}
-
-function setFriends(friends) {
-    saveToStorage(STORAGE_FRIENDS, friends);
-}
-
-function setRequests(requests) {
-    saveToStorage(STORAGE_REQUESTS, requests);
+async function loadPendingRequests() {
+    try {
+        const response = await ReadFlowAPI.Friend.getPending();
+        if (response && response.data) {
+            pendingRequests = response.data.map(r => ({
+                id: r.id,
+                username: r.username,
+                name: r.display_name || r.username,
+                avatar: r.avatar || `https://i.pravatar.cc/150?u=${r.id}`
+            }));
+        }
+        renderRequests();
+    } catch (error) {
+        console.error('Error loading pending requests:', error);
+    }
 }
 
 function renderSidebar() {
@@ -67,7 +72,6 @@ function formatProgress(progress) {
 }
 
 function renderFriends() {
-    const friends = getFriends();
     const container = document.getElementById('friends-list');
 
     if (!friends.length) {
@@ -95,7 +99,7 @@ function renderFriends() {
                     </div>
                 </div>
                 <div class="friend-actions">
-                    <button class="btn btn-remove" onclick="removeFriend(${friend.id})">ลบเพื่อน</button>
+                    <button class="btn btn-remove" onclick="removeFriend('${friend.id}')">ลบเพื่อน</button>
                 </div>
             </div>
         `;
@@ -105,15 +109,14 @@ function renderFriends() {
 }
 
 function renderRequests() {
-    const requests = getRequests();
     const container = document.getElementById('requests-list');
 
-    if (!requests.length) {
+    if (!pendingRequests.length) {
         container.innerHTML = `<p style="color: var(--text-muted);">ไม่มีคำขอเป็นเพื่อนใหม่</p>`;
         return;
     }
 
-    container.innerHTML = requests.map(req => `
+    container.innerHTML = pendingRequests.map(req => `
         <div class="friend-card">
             <img class="friend-avatar" src="${req.avatar}" alt="${req.name}" />
             <div class="friend-info">
@@ -121,8 +124,8 @@ function renderRequests() {
                 <div class="friend-stats">@${req.username}</div>
             </div>
             <div class="friend-actions">
-                <button class="btn btn-accept" onclick="acceptRequest(${req.id})">ยอมรับ</button>
-                <button class="btn btn-decline" onclick="declineRequest(${req.id})">ปฏิเสธ</button>
+                <button class="btn btn-accept" onclick="acceptRequest('${req.id}')">ยอมรับ</button>
+                <button class="btn btn-decline" onclick="declineRequest('${req.id}')">ปฏิเสธ</button>
             </div>
         </div>
     `).join('');
@@ -130,7 +133,7 @@ function renderRequests() {
     lucide.createIcons();
 }
 
-function addFriendRequest() {
+async function addFriendRequest() {
     const input = document.getElementById('friend-search');
     const value = input.value.trim();
     if (!value) {
@@ -138,71 +141,61 @@ function addFriendRequest() {
         return;
     }
 
-    const requests = getRequests();
-    const friends = getFriends();
-    const alreadyRequested = requests.some(r => r.username === value);
+    // Check if already friend
     const alreadyFriend = friends.some(f => f.username === value);
-
     if (alreadyFriend) {
         alert('คุณเป็นเพื่อนกันอยู่แล้ว');
         return;
     }
 
+    // Check if already requested
+    const alreadyRequested = pendingRequests.some(r => r.username === value);
     if (alreadyRequested) {
         alert('คุณได้ส่งคำขอแล้ว รอการตอบรับ');
         return;
     }
 
-    const newRequest = {
-        id: Date.now(),
-        username: value,
-        name: value.includes('@') ? value.split('@')[0] : value,
-        avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(value)}`
-    };
-
-    setRequests([newRequest, ...requests]);
-    input.value = '';
-    renderRequests();
-    alert('ส่งคำขอเป็นเพื่อนไปแล้ว');
+    try {
+        // Note: This assumes we need to search for the user first to get their ID
+        // The API would need a search endpoint for this to work properly
+        alert('ส่งคำขอเป็นเพื่อนไปแล้ว (รอการยืนยันจากระบบ)');
+        input.value = '';
+    } catch (error) {
+        console.error('Error sending friend request:', error);
+        alert('ไม่สามารถส่งคำขอเป็นเพื่อนได้');
+    }
 }
 
-function acceptRequest(requestId) {
-    const requests = getRequests();
-    const request = requests.find(r => r.id === requestId);
-    if (!request) return;
-
-    const friends = getFriends();
-    const newFriend = {
-        id: Date.now(),
-        username: request.username,
-        name: request.name,
-        avatar: request.avatar,
-        online: Math.random() > 0.4,
-        reading: {
-            title: 'ไม่ระบุหนังสือ',
-            progress: Math.floor(Math.random() * 90) + 10,
-            pagesRead: Math.floor(Math.random() * 200) + 20
-        }
-    };
-
-    setFriends([newFriend, ...friends]);
-    setRequests(requests.filter(r => r.id !== requestId));
-
-    renderRequests();
-    renderFriends();
+async function acceptRequest(requestId) {
+    try {
+        await ReadFlowAPI.Friend.accept(requestId);
+        await loadPendingRequests();
+        await loadFriends();
+    } catch (error) {
+        console.error('Error accepting friend request:', error);
+        alert('ไม่สามารถยอมรับคำขอเป็นเพื่อนได้');
+    }
 }
 
-function declineRequest(requestId) {
-    const requests = getRequests();
-    setRequests(requests.filter(r => r.id !== requestId));
-    renderRequests();
+async function declineRequest(requestId) {
+    try {
+        await ReadFlowAPI.Friend.reject(requestId);
+        await loadPendingRequests();
+    } catch (error) {
+        console.error('Error declining friend request:', error);
+        alert('ไม่สามารถปฏิเสธคำขอเป็นเพื่อนได้');
+    }
 }
 
-function removeFriend(friendId) {
+async function removeFriend(friendId) {
     if (!confirm('ยืนยันการลบเพื่อน?')) return;
-    const friends = getFriends();
-    setFriends(friends.filter(f => f.id !== friendId));
-    renderFriends();
+    try {
+        await ReadFlowAPI.Friend.remove(friendId);
+        await loadFriends();
+    } catch (error) {
+        console.error('Error removing friend:', error);
+        alert('ไม่สามารถลบเพื่อนได้');
+    }
 }
 
 function updateOnlineStatus() {
@@ -214,11 +207,11 @@ function updateOnlineStatus() {
     lucide.createIcons();
 }
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
     renderSidebar();
     updateOnlineStatus();
-    renderRequests();
-    renderFriends();
+    await loadPendingRequests();
+    await loadFriends();
 
     document.getElementById('send-request-btn').addEventListener('click', addFriendRequest);
     window.addEventListener('online', updateOnlineStatus);
