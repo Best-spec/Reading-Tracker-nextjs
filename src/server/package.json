@@ -5,7 +5,7 @@
   "main": "src/server/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --watch \"src/**/*.ts\" --exec npx tsx src/server/index.ts"
+    "dev": "tsx index.ts"
   },
   "keywords": [],
   "author": "",
