@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groups | ReadFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../layouts/main.css">
+</head>
+<body class="bg-gray-50">
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="header" id="header"></header>
+
+            <div class="content-wrapper">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Reading Groups</h2>
+                        <p class="text-gray-600 mt-1">Join groups and compete with friends</p>
+                    </div>
+                    <button type="button" onclick="openCreateGroupModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                        Create Group
+                    </button>
+                </div>
+
+                <!-- My Groups -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">My Groups</h3>
+                    <div id="my-groups" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <p>Loading groups...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discover Groups -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Discover Groups</h3>
+                    <div id="discover-groups" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="create-group-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-900">Create New Group</h3>
+                <button type="button" onclick="closeCreateGroupModal()" class="text-gray-400 hover:text-gray-600" aria-label="Close modal">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <form id="create-group-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Group Name</label>
+                    <input type="text" id="group-name" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Fantasy Book Club">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="group-description" rows="3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="What is this group about?"></textarea>
+                </div>
+                <div id="group-error" class="hidden bg-red-50 text-red-600 text-sm p-3 rounded-lg"></div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeCreateGroupModal()" class="flex-1 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+                    <button type="submit" id="create-group-btn" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Group Details Modal -->
+    <div id="group-details-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div id="group-details-content">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script src="../services/api.js"></script>
+    <script src="../layouts/main.js"></script>
+    <script src="../components/index.js"></script>
+    <script>
+        Layout.init('groups');
+        let allGroups = [];
+        let myGroups = [];
+
+        async function loadGroups() {
+            const myGroupsEl = document.getElementById('my-groups');
+            myGroupsEl.innerHTML = '<div class="loading-state col-span-full"><div class="spinner"></div><p>Loading groups...</p></div>';
+
+            try {
+                allGroups = await ReadFlowAPI.Groups.getGroups();
+                myGroups = allGroups.filter(g => g.isMember);
+                displayMyGroups(myGroups);
+                displayDiscoverGroups(allGroups.filter(g => !g.isMember));
+            } catch (error) {
+                myGroupsEl.innerHTML = '<div class="error-state col-span-full"><p>Failed to load groups</p></div>';
+            }
+        }
+
+        function displayMyGroups(groups) {
+            const container = document.getElementById('my-groups');
+            
+            if (groups.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state col-span-full">
+                        <i data-lucide="users" class="w-12 h-12 text-gray-300"></i>
+                        <h3>Not in any groups yet</h3>
+                        <p>Create a group or join one below</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = groups.map(group => `
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer" onclick="viewGroupDetails('${group.id}')">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <i data-lucide="users" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">${group.memberCount} members</span>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-1">${group.name}</h4>
+                    <p class="text-sm text-gray-500 line-clamp-2">${group.description || 'No description'}</p>
+                    <div class="mt-3 pt-3 border-t border-gray-100">
+                        <p class="text-xs text-gray-500">Your rank: <span class="font-semibold text-blue-600">#${group.myRank || '-'}</span></p>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function displayDiscoverGroups(groups) {
+            const container = document.getElementById('discover-groups');
+            
+            if (groups.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 col-span-full">No more groups to join</p>`;
+                return;
+            }
+
+            container.innerHTML = groups.map(group => `
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-600 rounded-xl flex items-center justify-center">
+                            <i data-lucide="users" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">${group.memberCount} members</span>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 mb-1">${group.name}</h4>
+                    <p class="text-sm text-gray-500 line-clamp-2 mb-3">${group.description || 'No description'}</p>
+                    <button type="button" onclick="joinGroup('${group.id}')" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors">
+                        Join Group
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function openCreateGroupModal() {
+            document.getElementById('create-group-form').reset();
+            document.getElementById('group-error').classList.add('hidden');
+            document.getElementById('create-group-modal').classList.remove('hidden');
+            document.getElementById('create-group-modal').classList.add('flex');
+        }
+
+        function closeCreateGroupModal() {
+            document.getElementById('create-group-modal').classList.add('hidden');
+            document.getElementById('create-group-modal').classList.remove('flex');
+        }
+
+        async function joinGroup(groupId) {
+            try {
+                await ReadFlowAPI.Groups.joinGroup(groupId);
+                ReadFlowComponents.Toast({ message: 'Joined group successfully!', type: 'success' });
+                loadGroups();
+            } catch (error) {
+                ReadFlowComponents.Toast({ message: error.message || 'Failed to join group', type: 'error' });
+            }
+        }
+
+        async function viewGroupDetails(groupId) {
+            const modal = document.getElementById('group-details-modal');
+            const content = document.getElementById('group-details-content');
+            
+            content.innerHTML = '<div class="p-8 flex justify-center"><div class="spinner"></div></div>';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            try {
+                const group = await ReadFlowAPI.Groups.getGroupById(groupId);
+                const leaderboard = await ReadFlowAPI.Groups.getLeaderboard(groupId);
+                
+                content.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <h3 class="text-2xl font-bold text-gray-900">${group.name}</h3>
+                                <p class="text-gray-600 mt-1">${group.description || 'No description'}</p>
+                            </div>
+                            <button type="button" onclick="closeGroupDetailsModal()" class="text-gray-400 hover:text-gray-600" aria-label="Close modal">
+                                <i data-lucide="x" class="w-6 h-6"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="flex gap-4 mb-6 text-sm">
+                            <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full">${group.memberCount} members</span>
+                            <span class="px-3 py-1 bg-green-50 text-green-600 rounded-full">${group.weeklyPages || 0} pages this week</span>
+                        </div>
+
+                        <h4 class="font-semibold text-gray-900 mb-3">Weekly Leaderboard</h4>
+                        <div class="space-y-2">
+                            ${leaderboard.map((member, index) => `
+                                <div class="flex items-center gap-3 p-3 ${index < 3 ? 'bg-yellow-50' : 'bg-gray-50'} rounded-lg">
+                                    <span class="w-8 text-center font-bold ${index === 0 ? 'text-yellow-600' : index === 1 ? 'text-gray-600' : index === 2 ? 'text-orange-600' : 'text-gray-400'}">
+                                        #${index + 1}
+                                    </span>
+                                    <img src="${member.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + member.username}" 
+                                         alt="${member.username}" 
+                                         class="w-10 h-10 rounded-full object-cover">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900">${member.username}</p>
+                                    </div>
+                                    <span class="font-semibold text-blue-600">${member.weeklyPages} pages</span>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        ${group.isMember ? `
+                            <button type="button" onclick="leaveGroup('${groupId}')" class="w-full mt-6 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                Leave Group
+                            </button>
+                        ` : `
+                            <button type="button" onclick="joinGroup('${groupId}'); closeGroupDetailsModal();" class="w-full mt-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                                Join Group
+                            </button>
+                        `}
+                    </div>
+                `;
+                lucide.createIcons();
+            } catch (error) {
+                content.innerHTML = '<div class="p-6 text-center text-red-500">Failed to load group details</div>';
+            }
+        }
+
+        function closeGroupDetailsModal() {
+            document.getElementById('group-details-modal').classList.add('hidden');
+            document.getElementById('group-details-modal').classList.remove('flex');
+        }
+
+        async function leaveGroup(groupId) {
+            if (!confirm('Leave this group?')) return;
+            
+            try {
+                await ReadFlowAPI.Groups.leaveGroup(groupId);
+                closeGroupDetailsModal();
+                ReadFlowComponents.Toast({ message: 'Left group', type: 'info' });
+                loadGroups();
+            } catch (error) {
+                ReadFlowComponents.Toast({ message: 'Failed to leave group', type: 'error' });
+            }
+        }
+
+        document.getElementById('create-group-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('create-group-btn');
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+
+            try {
+                await ReadFlowAPI.Groups.createGroup({
+                    name: document.getElementById('group-name').value,
+                    description: document.getElementById('group-description').value
+                });
+                closeCreateGroupModal();
+                ReadFlowComponents.Toast({ message: 'Group created!', type: 'success' });
+                loadGroups();
+            } catch (error) {
+                document.getElementById('group-error').textContent = error.message || 'Failed to create group';
+                document.getElementById('group-error').classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Create';
+            }
+        });
+
+        // Close modals on overlay click
+        document.getElementById('create-group-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeCreateGroupModal();
+        });
+        document.getElementById('group-details-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeGroupDetailsModal();
+        });
+
+        loadGroups();
+    </script>
+</body>
+</html>

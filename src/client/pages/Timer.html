@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Timer | ReadFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../layouts/main.css">
+    <style>
+        .timer-circle {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: conic-gradient(#3b82f6 var(--progress, 0%), #e2e8f0 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .timer-inner {
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .timer-display {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            font-variant-numeric: tabular-nums;
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .timer-active {
+            animation: pulse-ring 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="header" id="header"></header>
+
+            <div class="content-wrapper">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Reading Timer</h2>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Timer Section -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                            <!-- Book Selection -->
+                            <div class="mb-8">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Book</label>
+                                <select id="book-select" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Choose a book to read...</option>
+                                </select>
+                            </div>
+
+                            <!-- Timer Display -->
+                            <div class="flex justify-center mb-8">
+                                <div id="timer-circle" class="timer-circle">
+                                    <div class="timer-inner">
+                                        <span id="timer-display" class="timer-display">00:00:00</span>
+                                        <span id="timer-status" class="text-gray-500 text-sm mt-2">Ready to start</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Timer Controls -->
+                            <div class="flex justify-center gap-4">
+                                <button type="button" id="btn-start" onclick="startTimer()" class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold flex items-center gap-2 transition-colors">
+                                    <i data-lucide="play" class="w-5 h-5"></i>
+                                    <span>Start</span>
+                                </button>
+                                <button type="button" id="btn-pause" onclick="pauseTimer()" class="hidden px-8 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-semibold flex items-center gap-2 transition-colors">
+                                    <i data-lucide="pause" class="w-5 h-5"></i>
+                                    <span>Pause</span>
+                                </button>
+                                <button type="button" id="btn-stop" onclick="stopTimer()" class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold flex items-center gap-2 transition-colors" disabled>
+                                    <i data-lucide="square" class="w-5 h-5"></i>
+                                    <span>Stop &amp; Save</span>
+                                </button>
+                            </div>
+
+                            <!-- Quick Duration Buttons -->
+                            <div class="flex justify-center gap-2 mt-6">
+                                <button type="button" onclick="setTargetTime(15)" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">15 min</button>
+                                <button type="button" onclick="setTargetTime(30)" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">30 min</button>
+                                <button type="button" onclick="setTargetTime(45)" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">45 min</button>
+                                <button type="button" onclick="setTargetTime(60)" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">1 hour</button>
+                            </div>
+                        </div>
+
+                        <!-- Active Session Info -->
+                        <div id="session-info" class="bg-blue-50 rounded-xl p-6 mt-6 hidden">
+                            <h3 class="font-semibold text-blue-900 mb-2">Current Session</h3>
+                            <p class="text-blue-700">Reading: <span id="current-book-name">-</span></p>
+                            <p class="text-blue-700">Started: <span id="session-start">-</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="space-y-6">
+                        <!-- Today's Stats -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <h3 class="font-semibold text-gray-900 mb-4">Today's Reading</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Sessions</span>
+                                    <span id="today-sessions" class="font-semibold text-gray-900">0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Total Time</span>
+                                    <span id="today-time" class="font-semibold text-gray-900">0 min</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Pages Read</span>
+                                    <span id="today-pages" class="font-semibold text-gray-900">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Sessions -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <h3 class="font-semibold text-gray-900 mb-4">Recent Sessions</h3>
+                            <div id="recent-sessions" class="space-y-3">
+                                <p class="text-gray-500 text-sm">No sessions today</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Stop Session Modal -->
+    <div id="stop-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Save Reading Session</h3>
+            <div class="space-y-4">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600">Duration</p>
+                    <p id="session-duration" class="text-2xl font-bold text-gray-900">00:00:00</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pages Read</label>
+                    <input type="number" id="session-pages" min="0" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="How many pages did you read?">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Chapter/Section (optional)</label>
+                    <input type="text" id="session-section" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Chapter 3">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+                    <textarea id="session-notes" rows="2" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Any thoughts about your reading?"></textarea>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="cancelStop()" class="flex-1 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+                    <button type="button" onclick="confirmStop()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">Save Session</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../services/api.js"></script>
+    <script src="../layouts/main.js"></script>
+    <script src="../components/index.js"></script>
+    <script>
+        Layout.init('timer');
+
+        let timerInterval = null;
+        let startTime = null;
+        let elapsedTime = 0;
+        let isRunning = false;
+        let currentSessionId = null;
+        let books = [];
+        let targetTime = 0;
+
+        // Load books for selection
+        async function loadBooks() {
+            try {
+                books = await ReadFlowAPI.Books.getAllBooks();
+                const select = document.getElementById('book-select');
+                const reading = books.filter(b => b.status === 'READING' || b.status === 'PLAN');
+                
+                reading.forEach(book => {
+                    const option = document.createElement('option');
+                    option.value = book.id;
+                    option.textContent = book.title;
+                    select.appendChild(option);
+                });
+
+                // Check URL params for pre-selected book
+                const params = new URLSearchParams(window.location.search);
+                const bookId = params.get('book');
+                if (bookId) {
+                    select.value = bookId;
+                }
+            } catch (error) {
+                console.error('Failed to load books:', error);
+            }
+        }
+
+        function formatTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateTimerDisplay() {
+            const totalSeconds = Math.floor(elapsedTime / 1000);
+            document.getElementById('timer-display').textContent = formatTime(totalSeconds);
+            
+            // Update progress circle
+            if (targetTime > 0) {
+                const progress = Math.min((totalSeconds / (targetTime * 60)) * 100, 100);
+                document.getElementById('timer-circle').style.setProperty('--progress', `${progress}%`);
+            }
+        }
+
+        function setTargetTime(minutes) {
+            targetTime = minutes;
+            if (!isRunning) {
+                document.getElementById('timer-status').textContent = `Target: ${minutes} minutes`;
+            }
+        }
+
+        async function startTimer() {
+            const bookId = document.getElementById('book-select').value;
+            if (!bookId) {
+                ReadFlowComponents.Toast({ message: 'Please select a book first', type: 'warning' });
+                return;
+            }
+
+            if (!isRunning) {
+                isRunning = true;
+                startTime = Date.now() - elapsedTime;
+                
+                document.getElementById('btn-start').classList.add('hidden');
+                document.getElementById('btn-pause').classList.remove('hidden');
+                document.getElementById('btn-stop').disabled = false;
+                document.getElementById('timer-status').textContent = 'Reading...';
+                document.getElementById('timer-circle').classList.add('timer-active');
+                
+                const book = books.find(b => b.id === bookId);
+                document.getElementById('session-info').classList.remove('hidden');
+                document.getElementById('current-book-name').textContent = book?.title || '-';
+                document.getElementById('session-start').textContent = new Date().toLocaleTimeString();
+
+                try {
+                    const session = await ReadFlowAPI.ReadingSessions.startSession(bookId);
+                    currentSessionId = session.id;
+                } catch (error) {
+                    console.error('Failed to start session:', error);
+                }
+
+                timerInterval = setInterval(() => {
+                    elapsedTime = Date.now() - startTime;
+                    updateTimerDisplay();
+                }, 1000);
+            }
+        }
+
+        function pauseTimer() {
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(timerInterval);
+                document.getElementById('btn-start').classList.remove('hidden');
+                document.getElementById('btn-pause').classList.add('hidden');
+                document.getElementById('timer-status').textContent = 'Paused';
+                document.getElementById('timer-circle').classList.remove('timer-active');
+            }
+        }
+
+        function stopTimer() {
+            if (elapsedTime > 0) {
+                const totalSeconds = Math.floor(elapsedTime / 1000);
+                document.getElementById('session-duration').textContent = formatTime(totalSeconds);
+                document.getElementById('stop-modal').classList.remove('hidden');
+                document.getElementById('stop-modal').classList.add('flex');
+            }
+        }
+
+        function cancelStop() {
+            document.getElementById('stop-modal').classList.add('hidden');
+            document.getElementById('stop-modal').classList.remove('flex');
+        }
+
+        async function confirmStop() {
+            const pagesRead = parseInt(document.getElementById('session-pages').value) || 0;
+            const section = document.getElementById('session-section').value;
+            const notes = document.getElementById('session-notes').value;
+            
+            const minutes = Math.floor(elapsedTime / 60000);
+
+            try {
+                if (currentSessionId) {
+                    await ReadFlowAPI.ReadingSessions.stopSession(currentSessionId, {
+                        minutesRead: minutes,
+                        pagesRead: pagesRead,
+                        section: section,
+                        notes: notes
+                    });
+                }
+
+                // Reset timer
+                clearInterval(timerInterval);
+                isRunning = false;
+                elapsedTime = 0;
+                currentSessionId = null;
+                targetTime = 0;
+                
+                document.getElementById('timer-display').textContent = '00:00:00';
+                document.getElementById('timer-status').textContent = 'Ready to start';
+                document.getElementById('timer-circle').classList.remove('timer-active');
+                document.getElementById('btn-start').classList.remove('hidden');
+                document.getElementById('btn-pause').classList.add('hidden');
+                document.getElementById('btn-stop').disabled = true;
+                document.getElementById('session-info').classList.add('hidden');
+                document.getElementById('stop-modal').classList.add('hidden');
+                document.getElementById('stop-modal').classList.remove('flex');
+                document.getElementById('book-form').reset();
+
+                ReadFlowComponents.Toast({ message: 'Session saved successfully!', type: 'success' });
+                loadTodayStats();
+            } catch (error) {
+                ReadFlowComponents.Toast({ message: 'Failed to save session', type: 'error' });
+            }
+        }
+
+        async function loadTodayStats() {
+            try {
+                const sessions = await ReadFlowAPI.ReadingSessions.getSessions();
+                const today = new Date().toDateString();
+                const todaySessions = sessions.filter(s => new Date(s.startTime).toDateString() === today);
+                
+                document.getElementById('today-sessions').textContent = todaySessions.length;
+                document.getElementById('today-time').textContent = 
+                    `${todaySessions.reduce((sum, s) => sum + (s.minutesRead || 0), 0)} min`;
+                document.getElementById('today-pages').textContent = 
+                    todaySessions.reduce((sum, s) => sum + (s.pagesRead || 0), 0);
+
+                // Display recent sessions
+                const recentEl = document.getElementById('recent-sessions');
+                if (todaySessions.length > 0) {
+                    recentEl.innerHTML = todaySessions.slice(0, 5).map(s => {
+                        const book = books.find(b => b.id === s.bookId);
+                        return `
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-sm text-gray-900">${book?.title || 'Unknown'}</p>
+                                    <p class="text-xs text-gray-500">${s.minutesRead || 0} min • ${s.pagesRead || 0} pages</p>
+                                </div>
+                                <span class="text-xs text-gray-400">${new Date(s.endTime || s.startTime).toLocaleTimeString()}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // Initialize
+        loadBooks();
+        loadTodayStats();
+    </script>
+</body>
+</html>

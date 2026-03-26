@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends | ReadFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../layouts/main.css">
+</head>
+<body class="bg-gray-50">
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="header" id="header"></header>
+
+            <div class="content-wrapper">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Friends</h2>
+
+                <!-- Search Section -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <div class="flex gap-4">
+                        <div class="flex-1 relative">
+                            <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-gray-400"></i>
+                            <input 
+                                type="text" 
+                                id="search-friends" 
+                                placeholder="Search for friends by username or email..."
+                                class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                        </div>
+                        <button type="button" onclick="searchUsers()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
+                            Search
+                        </button>
+                    </div>
+                    <div id="search-results" class="mt-4 hidden"></div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex gap-2 mb-6">
+                    <button type="button" onclick="switchTab('friends')" id="tab-friends" class="px-6 py-2 rounded-xl font-medium transition-colors bg-blue-600 text-white">
+                        My Friends
+                    </button>
+                    <button type="button" onclick="switchTab('requests')" id="tab-requests" class="px-6 py-2 rounded-xl font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        Requests <span id="request-count" class="ml-1 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
+                    </button>
+                    <button type="button" onclick="switchTab('online')" id="tab-online" class="px-6 py-2 rounded-xl font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        Online Now
+                    </button>
+                </div>
+
+                <!-- Friends Grid -->
+                <div id="friends-content">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Loading friends...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../services/api.js"></script>
+    <script src="../layouts/main.js"></script>
+    <script src="../components/index.js"></script>
+    <script>
+        Layout.init('friends');
+        let currentTab = 'friends';
+        let friendsList = [];
+        let onlineUsers = [];
+
+        async function loadFriends() {
+            const content = document.getElementById('friends-content');
+            content.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>Loading friends...</p></div>';
+
+            try {
+                friendsList = await ReadFlowAPI.Friends.getFriends();
+                displayFriends(friendsList);
+            } catch (error) {
+                content.innerHTML = '<div class="error-state"><i data-lucide="alert-circle"></i><p>Failed to load friends</p></div>';
+                lucide.createIcons();
+            }
+        }
+
+        function displayFriends(friends) {
+            const content = document.getElementById('friends-content');
+            
+            if (friends.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="users" class="w-12 h-12 text-gray-300"></i>
+                        <h3>No friends yet</h3>
+                        <p>Search for users above to add friends</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${friends.map(friend => `
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 flex items-center gap-4">
+                            <div class="relative">
+                                <img src="${friend.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + friend.username}" 
+                                     alt="${friend.username}" 
+                                     class="w-14 h-14 rounded-full object-cover">
+                                ${friend.isOnline ? `
+                                    <span class="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></span>
+                                ` : ''}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-semibold text-gray-900 truncate">${friend.username}</h4>
+                                <p class="text-sm text-gray-500">${friend.currentBook ? `Reading: ${friend.currentBook}` : 'Not reading'}</p>
+                            </div>
+                            <button type="button" onclick="removeFriend('${friend.id}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" aria-label="Remove friend">
+                                <i data-lucide="user-minus" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        async function searchUsers() {
+            const query = document.getElementById('search-friends').value.trim();
+            if (!query) return;
+
+            const resultsDiv = document.getElementById('search-results');
+            resultsDiv.innerHTML = '<div class="flex justify-center py-4"><div class="spinner"></div></div>';
+            resultsDiv.classList.remove('hidden');
+
+            try {
+                const results = await ReadFlowAPI.Friends.searchUsers(query);
+                
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<p class="text-gray-500 text-center py-4">No users found</p>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = `
+                    <div class="border-t border-gray-200 pt-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">Search Results</h4>
+                        <div class="space-y-2">
+                            ${results.map(user => `
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <img src="${user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username}" 
+                                             alt="${user.username}" 
+                                             class="w-10 h-10 rounded-full object-cover">
+                                        <span class="font-medium text-gray-900">${user.username}</span>
+                                    </div>
+                                    <button type="button" onclick="sendRequest('${user.id}')" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                                        Add Friend
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = '<p class="text-red-500 text-center py-4">Search failed</p>';
+            }
+        }
+
+        async function sendRequest(userId) {
+            try {
+                await ReadFlowAPI.Friends.sendRequest(userId);
+                ReadFlowComponents.Toast({ message: 'Friend request sent!', type: 'success' });
+                document.getElementById('search-results').classList.add('hidden');
+            } catch (error) {
+                ReadFlowComponents.Toast({ message: error.message || 'Failed to send request', type: 'error' });
+            }
+        }
+
+        async function removeFriend(userId) {
+            if (!confirm('Remove this friend?')) return;
+            
+            try {
+                await ReadFlowAPI.Friends.removeFriend(userId);
+                ReadFlowComponents.Toast({ message: 'Friend removed', type: 'success' });
+                loadFriends();
+            } catch (error) {
+                ReadFlowComponents.Toast({ message: 'Failed to remove friend', type: 'error' });
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update button styles
+            ['friends', 'requests', 'online'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    btn.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                    btn.classList.add('bg-blue-600', 'text-white');
+                } else {
+                    btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                }
+            });
+
+            // Load tab content
+            if (tab === 'friends') {
+                displayFriends(friendsList);
+            } else if (tab === 'requests') {
+                loadRequests();
+            } else if (tab === 'online') {
+                displayOnline();
+            }
+        }
+
+        async function loadRequests() {
+            const content = document.getElementById('friends-content');
+            content.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>Loading requests...</p></div>';
+
+            try {
+                // Filter pending requests from friends list
+                const pending = friendsList.filter(f => f.status === 'PENDING');
+                
+                if (pending.length === 0) {
+                    content.innerHTML = `
+                        <div class="empty-state">
+                            <i data-lucide="inbox" class="w-12 h-12 text-gray-300"></i>
+                            <h3>No pending requests</h3>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
+                content.innerHTML = `
+                    <div class="space-y-3">
+                        ${pending.map(req => `
+                            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <img src="${req.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + req.username}" 
+                                         alt="${req.username}" 
+                                         class="w-12 h-12 rounded-full object-cover">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">${req.username}</h4>
+                                        <p class="text-sm text-gray-500">Wants to be your friend</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="acceptRequest('${req.id}')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
+                                        Accept
+                                    </button>
+                                    <button type="button" onclick="rejectRequest('${req.id}')" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+                                        Decline
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                content.innerHTML = '<div class="error-state"><p>Failed to load requests</p></div>';
+            }
+        }
+
+        async function acceptRequest(userId) {
+            try {
+                await ReadFlowAPI.Friends.acceptRequest(userId);
+                ReadFlowComponents.Toast({ message: 'Friend request accepted!', type: 'success' });
+                loadFriends();
+            } catch (error) {
+                ReadFlowComponents.Toast({ message: 'Failed to accept request', type: 'error' });
+            }
+        }
+
+        async function rejectRequest(userId) {
+            try {
+                await ReadFlowAPI.Friends.rejectRequest(userId);
+                ReadFlowComponents.Toast({ message: 'Request declined', type: 'info' });
+                loadFriends();
+            } catch (error) {
+                ReadFlowComponents.Toast({ message: 'Failed to decline request', type: 'error' });
+            }
+        }
+
+        function displayOnline() {
+            const online = friendsList.filter(f => f.isOnline);
+            const content = document.getElementById('friends-content');
+
+            if (online.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="wifi-off" class="w-12 h-12 text-gray-300"></i>
+                        <h3>No friends online</h3>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            displayFriends(online);
+        }
+
+        // Search on Enter key
+        document.getElementById('search-friends')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchUsers();
+        });
+
+        // Initialize
+        loadFriends();
+    </script>
+</body>
+</html>

@@ -10,12 +10,12 @@ import {
   getGroupMembers,
   getGroupLeaderboard,
   getGroupTotalTime,
-} from '../controllers/groupController';
-import { authenticateToken } from '../middleware/auth';
+} from '../controllers/groupController.js';
+import { middleware } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
-router.use(authenticateToken);
+router.use(middleware);
 
 router.post('/', createGroup);
 router.get('/', getGroups);

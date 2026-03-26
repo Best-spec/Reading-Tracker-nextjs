@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | ReadFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../layouts/main.css">
+</head>
+<body class="bg-gray-50">
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="header" id="header"></header>
+
+            <div class="content-wrapper">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Settings</h2>
+
+                <!-- Profile Settings -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                            Profile Settings
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Display Name</label>
+                            <input type="text" id="display-name" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" id="email" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                            <textarea id="bio" rows="3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+                        <button type="button" onclick="updateProfile()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Save Profile
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Password Settings -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="lock" class="w-5 h-5"></i>
+                            Password Settings
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                            <input type="password" id="current-password" autocomplete="current-password" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                            <input type="password" id="new-password" autocomplete="new-password" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                            <input type="password" id="confirm-password" autocomplete="new-password" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <button type="button" onclick="updatePassword()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Update Password
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reading Preferences -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="book-open" class="w-5 h-5"></i>
+                            Reading Preferences
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">Daily Reading Goal</p>
+                                <p class="text-sm text-gray-500">Set your daily reading target</p>
+                            </div>
+                            <input type="number" id="daily-goal" min="1" max="24" class="w-20 px-3 py-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">Reading Reminders</p>
+                                <p class="text-sm text-gray-500">Get notified to read daily</p>
+                            </div>
+                            <div class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="reading-reminders" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">Public Profile</p>
+                                <p class="text-sm text-gray-500">Make your reading activity public</p>
+                            </div>
+                            <div class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="public-profile" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="updatePreferences()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Save Preferences
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notification Settings -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            Notification Settings
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">Email Notifications</p>
+                                <p class="text-sm text-gray-500">Receive email updates</p>
+                            </div>
+                            <div class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="email-notifications" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">Friend Requests</p>
+                                <p class="text-sm text-gray-500">Notify when someone adds you</p>
+                            </div>
+                            <div class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="friend-requests" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">Group Invites</p>
+                                <p class="text-sm text-gray-500">Notify for group invitations</p>
+                            </div>
+                            <div class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="group-invites" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="updateNotifications()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Save Notifications
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../services/api.js"></script>
+    <script src="../layouts/main.js"></script>
+    <script src="Settings.js"></script>
+</body>
+</html>

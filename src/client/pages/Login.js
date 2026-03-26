@@ -14,7 +14,7 @@ const checkAuth = async () => {
 
 checkAuth();
 
-const loginForm = document.getElementById('loginForm');
+const loginForm = document.getElementById('login-form');
 console.log('พบฟอร์มล็อกอิน :', loginForm);
 
 loginForm.addEventListener('submit', async (e) => {

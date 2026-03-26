@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | ReadFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="../layouts/main.css">
+</head>
+<body class="bg-gray-50">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header" id="header"></header>
+
+            <!-- Content -->
+            <div class="content-wrapper">
+                <!-- Welcome Section -->
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900" id="welcome-text">Welcome back!</h2>
+                    <p class="text-gray-600 mt-1">Here's your reading progress today</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Total Books -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Total Books</p>
+                                <p class="text-3xl font-bold text-gray-900" id="stat-books">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                <i data-lucide="library" class="w-6 h-6 text-blue-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-green-600 mt-2 flex items-center gap-1">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            <span id="stat-books-change">+0 this week</span>
+                        </p>
+                    </div>
+
+                    <!-- Reading Hours -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Reading Hours</p>
+                                <p class="text-3xl font-bold text-gray-900" id="stat-hours">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                <i data-lucide="clock" class="w-6 h-6 text-green-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2" id="stat-hours-week">This week</p>
+                    </div>
+
+                    <!-- Pages Read -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Pages Read</p>
+                                <p class="text-3xl font-bold text-gray-900" id="stat-pages">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                                <i data-lucide="book-open" class="w-6 h-6 text-purple-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Total pages</p>
+                    </div>
+
+                    <!-- Current Streak -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Current Streak</p>
+                                <p class="text-3xl font-bold text-gray-900" id="stat-streak">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                                <i data-lucide="flame" class="w-6 h-6 text-orange-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-orange-600 mt-2 font-medium">Keep it up!</p>
+                    </div>
+                </div>
+
+                <!-- Main Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Continue Reading -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                            <div class="p-6 border-b border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-900">Continue Reading</h3>
+                            </div>
+                            <div class="p-6" id="continue-reading">
+                                <div class="empty-state py-8">
+                                    <i data-lucide="book-x" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+                                    <p class="text-gray-500 text-center">No books in progress</p>
+                                    <a href="Books.html" class="inline-block mt-3 text-blue-600 hover:underline">Add your first book</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Weekly Chart -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mt-6">
+                            <div class="p-6 border-b border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-900">Weekly Reading Activity</h3>
+                            </div>
+                            <div class="p-6">
+                                <canvas id="weeklyChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Content -->
+                    <div class="space-y-6">
+                        <!-- Quick Actions -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                            <div class="space-y-3">
+                                <a href="Timer.html" class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors">
+                                    <i data-lucide="play-circle" class="w-5 h-5 text-blue-600"></i>
+                                    <span class="font-medium text-gray-700">Start Reading Timer</span>
+                                </a>
+                                <a href="Books.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <i data-lucide="plus-circle" class="w-5 h-5 text-gray-500"></i>
+                                    <span class="font-medium text-gray-700">Add New Book</span>
+                                </a>
+                                <a href="Friends.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <i data-lucide="user-plus" class="w-5 h-5 text-gray-500"></i>
+                                    <span class="font-medium text-gray-700">Find Friends</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Recent Friends Activity -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Friends Activity</h3>
+                            <div id="friends-activity" class="space-y-4">
+                                <p class="text-gray-500 text-sm">No recent activity</p>
+                            </div>
+                        </div>
+
+                        <!-- Achievements -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Achievements</h3>
+                            <div id="achievements" class="flex flex-wrap gap-2">
+                                <span class="text-gray-500 text-sm">No achievements yet</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../services/api.js"></script>
+    <script src="../layouts/main.js"></script>
+    <script src="../components/index.js"></script>
+    <script>
+        // Initialize layout
+        Layout.init('dashboard');
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                // Get user profile
+                const profile = Layout.getStoredProfile();
+                if (profile) {
+                    document.getElementById('welcome-text').textContent = 
+                        `Welcome back, ${profile.username || 'Reader'}!`;
+                }
+
+                // Load stats
+                const stats = await ReadFlowAPI.Stats.getDashboardStats();
+                updateStats(stats);
+
+                // Load books in progress
+                const books = await ReadFlowAPI.Books.getAllBooks();
+                displayContinueReading(books);
+
+                // Load chart data
+                const trends = await ReadFlowAPI.Stats.getReadingTrends('week');
+                renderChart(trends);
+
+            } catch (error) {
+                console.error('Dashboard load error:', error);
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('stat-books').textContent = stats.totalBooks || 0;
+            document.getElementById('stat-hours').textContent = stats.totalHours || 0;
+            document.getElementById('stat-pages').textContent = stats.totalPages || 0;
+            document.getElementById('stat-streak').textContent = stats.currentStreak || 0;
+        }
+
+        function displayContinueReading(books) {
+            const container = document.getElementById('continue-reading');
+            const reading = books.filter(b => b.status === 'READING').slice(0, 3);
+            
+            if (reading.length === 0) return;
+
+            container.innerHTML = reading.map(book => `
+                <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl mb-3 last:mb-0">
+                    <img src="${book.coverUrl || 'https://via.placeholder.com/60x90?text=No+Cover'}" 
+                         alt="${book.title}" class="w-14 h-20 object-cover rounded-lg shadow-sm">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-gray-900 truncate">${book.title}</h4>
+                        <p class="text-sm text-gray-500">${book.author}</p>
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>${book.currentPage || 0} / ${book.totalPages} pages</span>
+                                <span>${Math.round(((book.currentPage || 0) / book.totalPages) * 100)}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full transition-all" 
+                                     style="width: ${((book.currentPage || 0) / book.totalPages) * 100}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="Timer.html?book=${book.id}" class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderChart(trends) {
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trends.labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Minutes Read',
+                        data: trends.data || [0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Load data on page load
+        loadDashboard();
+    </script>
+</body>
+</html>

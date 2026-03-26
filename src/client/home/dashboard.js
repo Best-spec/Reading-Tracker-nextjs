@@ -96,7 +96,12 @@ function renderSidebar() {
         { icon: 'settings', label: 'Settings', href: 'settings.html' }
     ];
 
-    document.getElementById('nav-menu').innerHTML = menu.map(item => `
+    const navMenu = document.getElementById('nav-menu');
+    if (!navMenu) {
+        console.error('nav-menu element not found');
+        return;
+    }
+    navMenu.innerHTML = menu.map(item => `
         <button class="nav-item ${current === item.href ? 'active' : ''}" onclick="window.location.href='${item.href}'">
             <i data-lucide="${item.icon}" style="width: 20px;"></i>
             <span>${item.label}</span>
@@ -319,6 +324,7 @@ window.addEventListener('load', async () => {
     await loadDashboardData();
     updateOnlineStatus();
     fetchDailyInsight();
+    lucide.createIcons();
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
 });

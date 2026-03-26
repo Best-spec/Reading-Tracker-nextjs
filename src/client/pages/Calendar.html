@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar | ReadFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../layouts/main.css">
+    <style>
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .calendar-day:hover {
+            transform: scale(1.1);
+        }
+        .heat-0 { background: #f1f5f9; }
+        .heat-1 { background: #dbeafe; }
+        .heat-2 { background: #93c5fd; }
+        .heat-3 { background: #3b82f6; color: white; }
+        .heat-4 { background: #1d4ed8; color: white; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="header" id="header"></header>
+
+            <div class="content-wrapper">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Reading Calendar</h2>
+
+                <!-- Calendar Controls -->
+                <div class="flex items-center justify-between mb-6">
+                    <button type="button" onclick="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Previous month">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <h3 id="current-month" class="text-xl font-semibold text-gray-900">Loading...</h3>
+                    <button type="button" onclick="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Next month">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Heatmap Legend -->
+                <div class="flex items-center gap-4 mb-4 text-sm text-gray-600">
+                    <span>Less</span>
+                    <div class="flex gap-1">
+                        <div class="w-4 h-4 rounded heat-0"></div>
+                        <div class="w-4 h-4 rounded heat-1"></div>
+                        <div class="w-4 h-4 rounded heat-2"></div>
+                        <div class="w-4 h-4 rounded heat-3"></div>
+                        <div class="w-4 h-4 rounded heat-4"></div>
+                    </div>
+                    <span>More</span>
+                </div>
+
+                <!-- Calendar -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <!-- Day Headers -->
+                    <div class="calendar-grid mb-2">
+                        <div class="text-center text-sm font-medium text-gray-500 py-2">Sun</div>
+                        <div class="text-center text-sm font-medium text-gray-500 py-2">Mon</div>
+                        <div class="text-center text-sm font-medium text-gray-500 py-2">Tue</div>
+                        <div class="text-center text-sm font-medium text-gray-500 py-2">Wed</div>
+                        <div class="text-center text-sm font-medium text-gray-500 py-2">Thu</div>
+                        <div class="text-center text-sm font-medium text-gray-500 py-2">Fri</div>
+                        <div class="text-center text-sm font-medium text-gray-500 py-2">Sat</div>
+                    </div>
+
+                    <!-- Calendar Days -->
+                    <div id="calendar-days" class="calendar-grid">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Selected Day Details -->
+                <div id="day-details" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6 hidden">
+                    <h4 class="font-semibold text-gray-900 mb-4" id="selected-date">Select a date</h4>
+                    <div id="day-sessions" class="space-y-3">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Monthly Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Days Read</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="month-days">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Total Hours</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="month-hours">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Pages Read</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="month-pages">0</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../services/api.js"></script>
+    <script src="../layouts/main.js"></script>
+    <script src="../components/index.js"></script>
+    <script>
+        Layout.init('calendar');
+        
+        let currentDate = new Date();
+        let calendarData = {};
+
+        async function loadCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            document.getElementById('current-month').textContent = 
+                currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            try {
+                const data = await ReadFlowAPI.Stats.getCalendarData(year, month + 1);
+                calendarData = data.days || {};
+                renderCalendar(year, month);
+                updateMonthSummary(data.summary);
+            } catch (error) {
+                console.error('Failed to load calendar:', error);
+                renderCalendar(year, month);
+            }
+        }
+
+        function renderCalendar(year, month) {
+            const container = document.getElementById('calendar-days');
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+
+            let html = '';
+            
+            // Empty cells before first day
+            for (let i = 0; i < startingDay; i++) {
+                html += '<div></div>';
+            }
+
+            // Days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayData = calendarData[dateKey];
+                const minutes = dayData?.minutes || 0;
+                
+                // Calculate heat level (0-4)
+                let heatClass = 'heat-0';
+                if (minutes > 0) heatClass = 'heat-1';
+                if (minutes >= 30) heatClass = 'heat-2';
+                if (minutes >= 60) heatClass = 'heat-3';
+                if (minutes >= 120) heatClass = 'heat-4';
+
+                const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+
+                html += `
+                    <div class="calendar-day ${heatClass} ${isToday ? 'ring-2 ring-blue-500' : ''}" 
+                         onclick="showDayDetails('${dateKey}', ${minutes})"
+                         title="${day} - ${minutes} minutes">
+                        ${day}
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function showDayDetails(dateKey, minutes) {
+            const details = document.getElementById('day-details');
+            const dateTitle = document.getElementById('selected-date');
+            const sessionsDiv = document.getElementById('day-sessions');
+
+            const date = new Date(dateKey);
+            dateTitle.textContent = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+            if (minutes === 0) {
+                sessionsDiv.innerHTML = '<p class="text-gray-500">No reading activity on this day</p>';
+            } else {
+                const dayData = calendarData[dateKey];
+                sessionsDiv.innerHTML = `
+                    <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i data-lucide="clock" class="w-5 h-5 text-blue-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Reading Session</p>
+                                <p class="text-sm text-gray-500">${dayData.sessions || 1} session(s)</p>
+                            </div>
+                        </div>
+                        <span class="font-semibold text-blue-600">${minutes} min</span>
+                    </div>
+                    ${dayData.pages ? `
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="book-open" class="w-5 h-5 text-green-600"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">Pages Read</p>
+                                </div>
+                            </div>
+                            <span class="font-semibold text-green-600">${dayData.pages} pages</span>
+                        </div>
+                    ` : ''}
+                `;
+                lucide.createIcons();
+            }
+
+            details.classList.remove('hidden');
+        }
+
+        function updateMonthSummary(summary) {
+            document.getElementById('month-days').textContent = summary?.daysRead || 0;
+            document.getElementById('month-hours').textContent = ((summary?.totalMinutes || 0) / 60).toFixed(1);
+            document.getElementById('month-pages').textContent = summary?.totalPages || 0;
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            loadCalendar();
+        }
+
+        // Initialize
+        loadCalendar();
+    </script>
+</body>
+</html>

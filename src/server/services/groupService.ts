@@ -1,6 +1,5 @@
-import { PrismaClient, Group, GroupMember, GroupRole, ReadingSession, ReadingLog } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Group, GroupMember, GroupRole, ReadingSession, ReadingLog } from '@prisma/client';
+import { prisma } from '../prisma.js';
 
 export class GroupService {
   async createGroup(ownerId: string, groupData: {
@@ -197,7 +196,7 @@ export class GroupService {
     });
 
     const sessionStats = await prisma.readingSession.groupBy({
-      by: ['userId'],
+      by: ['readingLogId'],
       where: {
         readingLog: {
           userId: { in: userIds },
@@ -206,6 +205,16 @@ export class GroupService {
       },
       _sum: {
         minutesRead: true,
+      },
+    });
+
+    const readingLogs = await prisma.readingLog.findMany({
+      where: {
+        id: { in: sessionStats.map(s => s.readingLogId) },
+      },
+      select: {
+        id: true,
+        userId: true,
       },
     });
 
@@ -222,7 +231,11 @@ export class GroupService {
 
     return users.map(user => {
       const booksFinished = readingStats.find(stat => stat.userId === user.id)?._count.id || 0;
-      const totalMinutes = sessionStats.find(stat => stat.userId === user.id)?._sum.minutesRead || 0;
+      const userSessionStats = sessionStats.filter(stat => {
+        const log = readingLogs.find(l => l.id === stat.readingLogId);
+        return log?.userId === user.id;
+      });
+      const totalMinutes = userSessionStats.reduce((sum, stat) => sum + (stat._sum.minutesRead || 0), 0);
 
       return {
         user,

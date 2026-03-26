@@ -1,40 +1,16 @@
-let logs = {};
+const STORAGE_KEY = 'readflow_reading_logs';
 
-async function loadReadingHistory() {
-    try {
-        const response = await ReadFlowAPI.Reading.getHistory();
-        if (response && response.data) {
-            // Convert reading history to calendar format
-            logs = {};
-            response.data.forEach(session => {
-                const date = new Date(session.start_time);
-                const key = formatDateKey(date);
-                const minutes = session.duration_minutes || 0;
-                if (logs[key]) {
-                    logs[key] += minutes;
-                } else {
-                    logs[key] = minutes;
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Error loading reading history:', error);
-        // Fall back to localStorage if API fails
-        loadFromLocalStorage();
-    }
-}
-
-function loadFromLocalStorage() {
+function getSavedLogs() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        logs = raw ? JSON.parse(raw) : {};
+        return raw ? JSON.parse(raw) : {};
     } catch (e) {
         console.warn('Cannot parse saved reading logs', e);
-        logs = {};
+        return {};
     }
 }
 
-function saveLogs() {
+function saveLogs(logs) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
 }
 
@@ -178,7 +154,7 @@ function renderCalendar(year, month, logs) {
             } else {
                 logs[key] = value;
             }
-            saveLogs();
+            saveLogs(logs);
             renderCalendar(year, month, logs);
             renderStats(year, month, logs);
         });
@@ -218,7 +194,7 @@ function updateOnlineStatus() {
     lucide.createIcons();
 }
 
-window.addEventListener('load', async () => {
+window.addEventListener('load', () => {
     initSidebar();
     updateOnlineStatus();
     window.addEventListener('online', updateOnlineStatus);
@@ -227,8 +203,7 @@ window.addEventListener('load', async () => {
     const now = new Date();
     let currentYear = now.getFullYear();
     let currentMonth = now.getMonth();
-    
-    await loadReadingHistory();
+    const logs = getSavedLogs();
 
     renderCalendar(currentYear, currentMonth, logs);
     renderStats(currentYear, currentMonth, logs);
@@ -253,7 +228,7 @@ window.addEventListener('load', async () => {
         renderStats(currentYear, currentMonth, logs);
     });
 
-    document.getElementById('save-today-btn').addEventListener('click', async () => {
+    document.getElementById('save-today-btn').addEventListener('click', () => {
         const input = document.getElementById('today-minutes');
         const val = parseInt(input.value);
         if (isNaN(val) || val < 0) {
@@ -266,7 +241,7 @@ window.addEventListener('load', async () => {
         } else {
             logs[key] = val;
         }
-        saveLogs();
+        saveLogs(logs);
         renderCalendar(currentYear, currentMonth, logs);
         renderStats(currentYear, currentMonth, logs);
         input.value = '';

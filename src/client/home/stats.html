@@ -6,7 +6,7 @@
     <title>ReadFlow - Statistics</title>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="layout.css">
     <link rel="stylesheet" href="stats.css">
 </head>
 <body>
@@ -18,7 +18,24 @@
                 <div class="logo-icon"><i data-lucide="book-open"></i></div>
                 <span class="logo-text">ReadFlow</span>
             </div>
-            <nav class="nav-menu" id="nav-menu"></nav>
+            <nav id="nav-menu" class="nav-menu">
+                <button type="button" class="nav-item" onclick="location.href='dashboard.html'">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button type="button" class="nav-item" onclick="location.href='books.html'">
+                    <i data-lucide="library"></i>
+                    <span>My Books</span>
+                </button>
+                <button type="button" class="nav-item" onclick="location.href='profile.html'">
+                    <i data-lucide="user"></i>
+                    <span>Profile</span>
+                </button>
+                <button type="button" class="nav-item" onclick="location.href='settings.html'">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </button>
+            </nav>
             <div class="status-badge">
                 <div id="online-status" class="online-pill"></div>
             </div>
@@ -30,7 +47,7 @@
                 <div>
                     <h2>สถิติการอ่านของคุณ</h2>
                     <div class="ai-insight">
-                        <i data-lucide="sparkles" style="color: #fbbf24; width: 16px;"></i>
+                        <i data-lucide="sparkles" class="icon-warning icon-sm"></i>
                         <span id="insight-text">กำลังโหลดสถิติ...</span>
                     </div>
                 </div>
@@ -42,7 +59,7 @@
                 <section class="section-card">
                     <div class="section-header">
                         <div class="section-title">
-                            <i data-lucide="clock" style="color: var(--primary)"></i>
+                            <i data-lucide="clock" class="icon-primary"></i>
                             เวลาอ่านรายวัน
                         </div>
                     </div>
@@ -52,7 +69,7 @@
                 <section class="section-card">
                     <div class="section-header">
                         <div class="section-title">
-                            <i data-lucide="calendar" style="color: var(--primary)"></i>
+                            <i data-lucide="calendar" class="icon-primary"></i>
                             เวลาอ่านรายสัปดาห์
                         </div>
                     </div>
@@ -60,10 +77,10 @@
                 </section>
             </div>
 
-            <section class="section-card" style="margin-top: 1.5rem;">
+            <section class="section-card mt-3">
                 <div class="section-header">
                     <div class="section-title">
-                        <i data-lucide="book-open" style="color: var(--primary)"></i>
+                        <i data-lucide="book-open" class="icon-primary"></i>
                         หนังสือที่อ่านมากที่สุด
                     </div>
                 </div>

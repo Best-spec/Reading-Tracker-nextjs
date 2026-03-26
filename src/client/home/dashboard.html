@@ -6,6 +6,7 @@
     <title>ReadFlow - Dashboard</title>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="layout.css">
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
@@ -17,7 +18,24 @@
                 <div class="logo-icon"><i data-lucide="book-open"></i></div>
                 <span class="logo-text">ReadFlow</span>
             </div>
-            <nav class="nav-menu" id="nav-menu"></nav>
+            <nav id="nav-menu" class="nav-menu">
+                <button type="button" class="nav-item active" onclick="location.href='dashboard.html'">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button type="button" class="nav-item" onclick="location.href='books.html'">
+                    <i data-lucide="library"></i>
+                    <span>My Books</span>
+                </button>
+                <button type="button" class="nav-item" onclick="location.href='profile.html'">
+                    <i data-lucide="user"></i>
+                    <span>Profile</span>
+                </button>
+                <button type="button" class="nav-item" onclick="location.href='settings.html'">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </button>
+            </nav>
             <div class="status-badge">
                 <div id="online-status" class="online-pill"></div>
             </div>
@@ -29,7 +47,7 @@
                 <div>
                     <h2>ยินดีต้อนรับกลับมา, วัยรุ่น! 👋</h2>
                     <div class="ai-insight">
-                        <i data-lucide="sparkles" style="color: #fbbf24; width: 16px;"></i>
+                        <i data-lucide="sparkles" class="icon-ai"></i>
                         <span id="daily-insight">กำลังโหลดแรงบันดาลใจ...</span>
                     </div>
                 </div>
@@ -42,7 +60,7 @@
                 <section class="section-card">
                     <div class="section-header">
                         <div class="section-title">
-                            <i data-lucide="trending-up" style="color: var(--primary)"></i>
+                            <i data-lucide="trending-up" class="icon-primary"></i>
                             แนวโน้มการอ่านรายสัปดาห์
                         </div>
                     </div>
@@ -53,14 +71,14 @@
                 <section class="section-card">
                     <div class="section-header">
                         <div class="section-title">
-                            <i data-lucide="book-marked" style="color: var(--primary)"></i>
+                            <i data-lucide="book-marked" class="icon-primary"></i>
                             กำลังอ่านอยู่
                         </div>
-                        <button onclick="handleRecommend()" class="btn btn-ai">✨ AI แนะนำ</button>
+                        <button type="button" onclick="handleRecommend()" class="btn btn-ai">✨ AI แนะนำ</button>
                     </div>
                     <div class="book-list" id="books-list"></div>
-                    <button class="btn btn-primary" style="margin-top: 2rem;">
-                        <i data-lucide="book-open" style="width: 18px;"></i>
+                    <button type="button" class="btn btn-primary btn-continue">
+                        <i data-lucide="book-open" class="icon-sm"></i>
                         หยิบมาอ่านต่อสิ
                     </button>
                 </section>
@@ -72,10 +90,10 @@
     <div id="ai-modal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
-                <h3 id="modal-title" style="font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                <h3 id="modal-title" class="modal-title-ai">
                     <i data-lucide="sparkles"></i> AI สรุปผล
                 </h3>
-                <button onclick="closeModal()" style="background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
+                <button type="button" onclick="closeModal()" class="btn-close" aria-label="ปิด"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body" id="modal-content"></div>
         </div>

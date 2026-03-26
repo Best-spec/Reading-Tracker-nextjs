@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics | ReadFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="../layouts/main.css">
+</head>
+<body class="bg-gray-50">
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="header" id="header"></header>
+
+            <div class="content-wrapper">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Reading Statistics</h2>
+
+                <!-- Period Selector -->
+                <div class="flex gap-2 mb-6">
+                    <button type="button" onclick="changePeriod('week')" id="period-week" class="period-btn px-4 py-2 rounded-lg font-medium transition-colors bg-blue-600 text-white">Week</button>
+                    <button type="button" onclick="changePeriod('month')" id="period-month" class="period-btn px-4 py-2 rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">Month</button>
+                    <button type="button" onclick="changePeriod('year')" id="period-year" class="period-btn px-4 py-2 rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">Year</button>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Total Sessions</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="stat-sessions">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Total Hours</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="stat-hours">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Pages Read</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="stat-pages">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                        <p class="text-sm text-gray-500">Average/Day</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="stat-avg">0</p>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Reading Trend Chart -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Reading Trend</h3>
+                        <canvas id="trendChart" height="250"></canvas>
+                    </div>
+
+                    <!-- Books by Status -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Books by Status</h3>
+                        <canvas id="statusChart" height="250"></canvas>
+                    </div>
+
+                    <!-- Reading Hours by Day -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Reading by Day of Week</h3>
+                        <canvas id="dayChart" height="250"></canvas>
+                    </div>
+
+                    <!-- Top Genres/Tags -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Reading Streak</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                                        <i data-lucide="flame" class="w-6 h-6 text-orange-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Current Streak</p>
+                                        <p class="text-sm text-gray-500">Consecutive reading days</p>
+                                    </div>
+                                </div>
+                                <span class="text-3xl font-bold text-orange-600" id="current-streak">0</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                        <i data-lucide="trophy" class="w-6 h-6 text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Best Streak</p>
+                                        <p class="text-sm text-gray-500">Your longest streak</p>
+                                    </div>
+                                </div>
+                                <span class="text-3xl font-bold text-blue-600" id="best-streak">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Achievements Section -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Achievements</h3>
+                    <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../services/api.js"></script>
+    <script src="../layouts/main.js"></script>
+    <script src="../components/index.js"></script>
+    <script>
+        Layout.init('stats');
+        let currentPeriod = 'week';
+        let trendChart, statusChart, dayChart;
+
+        async function changePeriod(period) {
+            currentPeriod = period;
+            
+            // Update button styles
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+            });
+            document.getElementById(`period-${period}`).classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+            document.getElementById(`period-${period}`).classList.add('bg-blue-600', 'text-white');
+
+            await loadStats();
+        }
+
+        async function loadStats() {
+            try {
+                const stats = await ReadFlowAPI.Stats.getReadingTrends(currentPeriod);
+                updateStatsDisplay(stats);
+                renderCharts(stats);
+                loadAchievements();
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        function updateStatsDisplay(stats) {
+            document.getElementById('stat-sessions').textContent = stats.totalSessions || 0;
+            document.getElementById('stat-hours').textContent = (stats.totalMinutes / 60).toFixed(1) || 0;
+            document.getElementById('stat-pages').textContent = stats.totalPages || 0;
+            document.getElementById('stat-avg').textContent = stats.averagePerDay?.toFixed(1) || 0;
+            document.getElementById('current-streak').textContent = stats.currentStreak || 0;
+            document.getElementById('best-streak').textContent = stats.bestStreak || 0;
+        }
+
+        function renderCharts(stats) {
+            // Trend Chart
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+            
+            trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: stats.labels || [],
+                    datasets: [{
+                        label: 'Minutes Read',
+                        data: stats.data || [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Status Chart
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            if (statusChart) statusChart.destroy();
+            
+            statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Reading', 'Finished', 'To Read', 'Dropped'],
+                    datasets: [{
+                        data: [
+                            stats.booksByStatus?.reading || 0,
+                            stats.booksByStatus?.finished || 0,
+                            stats.booksByStatus?.plan || 0,
+                            stats.booksByStatus?.dropped || 0
+                        ],
+                        backgroundColor: ['#3b82f6', '#22c55e', '#64748b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } }
+                    }
+                }
+            });
+
+            // Day of Week Chart
+            const dayCtx = document.getElementById('dayChart').getContext('2d');
+            if (dayChart) dayChart.destroy();
+            
+            dayChart = new Chart(dayCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Hours',
+                        data: stats.byDay || [0,0,0,0,0,0,0],
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        async function loadAchievements() {
+            try {
+                const achievements = await ReadFlowAPI.Stats.getAchievements();
+                const grid = document.getElementById('achievements-grid');
+                
+                if (achievements.length === 0) {
+                    grid.innerHTML = '<p class="text-gray-500 col-span-full">No achievements yet. Keep reading!</p>';
+                    return;
+                }
+
+                const icons = {
+                    'first_book': 'book-open',
+                    'streak_7': 'flame',
+                    'streak_30': 'fire',
+                    'hours_10': 'clock',
+                    'hours_100': 'hourglass',
+                    'pages_1000': 'file-text',
+                    'pages_10000': 'library',
+                    'night_owl': 'moon',
+                    'early_bird': 'sun'
+                };
+
+                grid.innerHTML = achievements.map(ach => `
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center ${ach.unlocked ? '' : 'opacity-50'}">
+                        <div class="w-12 h-12 mx-auto mb-2 ${ach.unlocked ? 'bg-yellow-100' : 'bg-gray-100'} rounded-xl flex items-center justify-center">
+                            <i data-lucide="${icons[ach.id] || 'award'}" class="w-6 h-6 ${ach.unlocked ? 'text-yellow-600' : 'text-gray-400'}"></i>
+                        </div>
+                        <p class="font-medium text-sm text-gray-900">${ach.name}</p>
+                        <p class="text-xs text-gray-500 mt-1">${ach.description}</p>
+                    </div>
+                `).join('');
+                
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Failed to load achievements:', error);
+            }
+        }
+
+        // Initialize
+        loadStats();
+    </script>
+</body>
+</html>

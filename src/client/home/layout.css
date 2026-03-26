@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700;800&display=swap');
+
+:root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --danger: #ef4444;
+    --orange: #f97316;
+    --radius-xl: 1.5rem;
+    --radius-lg: 1rem;
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Sarabun', sans-serif;
+    background-color: var(--bg);
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+.app-container { display: flex; min-height: 100vh; }
+
+.sidebar {
+    width: 260px;
+    background: var(--card-bg);
+    border-right: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    z-index: 40;
+}
+
+.logo-area { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2.5rem; padding: 0 0.5rem; }
+.logo-icon { background: var(--primary); color: white; padding: 0.5rem; border-radius: 0.75rem; display: flex; }
+.logo-text { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
+
+.nav-menu { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+.nav-item {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.75rem;
+    border: none; background: transparent; color: var(--text-muted); font-weight: 500;
+    cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;
+}
+.nav-item.active { background: var(--primary-light); color: var(--primary); }
+.nav-item:hover:not(.active) { background: var(--bg); color: var(--text-main); }
+.nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+.status-badge { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.online-pill { 
+    display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; 
+    border-radius: 999px; font-size: 0.875rem; font-weight: 500; 
+    background: #f0fdf4; color: #166534;
+}
+.online-pill::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+}
+
+.main-content { flex: 1; margin-left: 260px; padding: 3rem; transition: all 0.3s; }
+
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
+.header h2 { font-size: 1.875rem; font-weight: 800; margin: 0; }
+
+.ai-insight { display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.875rem; margin-top: 0.5rem; }
+.ai-insight svg { color: #fbbf24; width: 16px; height: 16px; }
+
+.btn {
+    padding: 0.75rem 1.25rem; border-radius: 1rem; border: none; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-hover); }
+
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.875rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-muted); }
+.form-control {
+    width: 100%; padding: 0.75rem 1rem; border-radius: 0.75rem; border: 1px solid var(--border);
+    font-family: inherit; font-size: 1rem; transition: border-color 0.2s;
+}
+.form-control:focus { outline: none; border-color: var(--primary); }
+
+.section-card {
+    background: white; border-radius: var(--radius-xl); border: 1px solid var(--border);
+    padding: 1.5rem; box-shadow: var(--shadow);
+}
+
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem;
+}
+.modal { background: white; width: 100%; max-width: 450px; border-radius: var(--radius-xl); overflow: hidden; }
+.modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-body { padding: 1.5rem; }
+
+@media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; padding: 1.5rem; }
+}

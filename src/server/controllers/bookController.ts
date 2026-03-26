@@ -18,7 +18,7 @@ export class BookController {
         return res.status(400).json({ error: 'Title, author, and totalPages are required' });
       }
 
-      const book = await bookService.createBook(req.user.id.toString(), {
+      const book = await bookService.createBook(req.user.id, {
         title,
         author,
         totalPages,
@@ -52,7 +52,7 @@ export class BookController {
         return res.status(404).json({ error: 'Book not found' });
       }
 
-      if ((book as any).user_id !== req.user.id.toString()) {
+      if ((book as any).user_id !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
@@ -81,7 +81,7 @@ export class BookController {
         return res.status(404).json({ error: 'Book not found' });
       }
 
-      if ((book as any).user_id !== req.user.id.toString()) {
+      if ((book as any).user_id !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
@@ -99,7 +99,7 @@ export class BookController {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      const books = await bookService.getUserBooks(req.user.id.toString());
+      const books = await bookService.getUserBooks(req.user.id);
       res.json(books);
     } catch (error) {
       console.error('Error fetching user books:', error);
@@ -125,7 +125,7 @@ export class BookController {
         return res.status(404).json({ error: 'Book not found' });
       }
 
-      if ((book as any).user_id !== req.user.id.toString()) {
+      if ((book as any).user_id !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
@@ -158,12 +158,12 @@ export class BookController {
         return res.status(404).json({ error: 'Book not found' });
       }
 
-      if ((book as any).user_id !== req.user.id.toString()) {
+      if ((book as any).user_id !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
       const readingLog = await bookService.updateReadingProgress(
-        req.user.id.toString(),
+        req.user.id,
         bookId,
         currentPage,
         status as Status
@@ -188,7 +188,7 @@ export class BookController {
         return res.status(400).json({ error: 'Invalid book ID' });
       }
 
-      const progress = await bookService.getReadingProgress(req.user.id.toString(), bookId);
+      const progress = await bookService.getReadingProgress(req.user.id, bookId);
 
       if (!progress) {
         return res.status(404).json({ error: 'Reading progress not found' });
@@ -207,7 +207,7 @@ export class BookController {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      const progress = await bookService.getAllReadingProgress(req.user.id.toString());
+      const progress = await bookService.getAllReadingProgress(req.user.id);
       res.json(progress);
     } catch (error) {
       console.error('Error fetching all reading progress:', error);
@@ -241,7 +241,7 @@ export class BookController {
         return res.status(404).json({ error: 'Book not found' });
       }
 
-      if ((book as any).user_id !== req.user.id.toString()) {
+      if ((book as any).user_id !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
@@ -278,7 +278,7 @@ export class BookController {
         return res.status(404).json({ error: 'Book not found' });
       }
 
-      if ((book as any).user_id !== req.user.id.toString()) {
+      if ((book as any).user_id !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
@@ -310,7 +310,7 @@ export class BookController {
         return res.status(404).json({ error: 'Book not found' });
       }
 
-      if ((book as any).user_id !== req.user.id.toString()) {
+      if ((book as any).user_id !== req.user.id) {
         return res.status(403).json({ error: 'Forbidden' });
       }
 

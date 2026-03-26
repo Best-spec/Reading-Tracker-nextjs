@@ -15,7 +15,7 @@ async function apiRequest(endpoint, options = {}) {
         const response = await fetch(url, { ...defaultOptions, ...options });
         
         if (!response.ok) {
-            if (response.status === 401) {
+            if (response.status === 401 || response.status === 403) {
                 window.location.href = '../auth/login.html';
                 return null;
             }
@@ -89,11 +89,11 @@ const GroupAPI = {
 // Reading Session APIs
 const ReadingAPI = {
     start: (bookId, section) => 
-        apiRequest('/reading/start', { method: 'POST', body: JSON.stringify({ bookId, section }) }),
+        apiRequest('/reading-sessions/start', { method: 'POST', body: JSON.stringify({ bookId, section }) }),
     stop: (sessionId, pagesRead) => 
-        apiRequest('/reading/stop', { method: 'POST', body: JSON.stringify({ sessionId, pagesRead }) }),
-    getHistory: () => apiRequest('/reading/history'),
-    getActive: () => apiRequest('/reading/active')
+        apiRequest('/reading-sessions/stop', { method: 'POST', body: JSON.stringify({ sessionId, pagesRead }) }),
+    getHistory: () => apiRequest('/reading-sessions/history'),
+    getActive: () => apiRequest('/reading-sessions/active')
 };
 
 // Auth APIs

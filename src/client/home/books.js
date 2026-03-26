@@ -47,7 +47,12 @@ function renderSidebar() {
         { icon: 'settings', label: 'Settings', href: 'settings.html' }
     ];
 
-    document.getElementById('nav-menu').innerHTML = menu.map(item => `
+    const navMenu = document.getElementById('nav-menu');
+    if (!navMenu) {
+        console.error('nav-menu element not found');
+        return;
+    }
+    navMenu.innerHTML = menu.map(item => `
         <button class="nav-item ${current === item.href ? 'active' : ''}" onclick="window.location.href='${item.href}'">
             <i data-lucide="${item.icon}" style="width: 20px;"></i>
             <span>${item.label}</span>
@@ -169,8 +174,86 @@ async function deleteBook(id) {
     }
 }
 
+// --- Timer Functions ---
+let timerInterval = null;
+let timerSeconds = 0;
+let isTimerRunning = false;
+
+function toggleTimer() {
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    
+    if (!isTimerRunning) {
+        isTimerRunning = true;
+        startBtn.innerHTML = '<i data-lucide="pause"></i> Pause';
+        startBtn.classList.remove('btn-success');
+        startBtn.classList.add('btn-warning');
+        stopBtn.disabled = false;
+        lucide.createIcons();
+        
+        timerInterval = setInterval(() => {
+            timerSeconds++;
+            updateTimerDisplay();
+        }, 1000);
+    } else {
+        pauseTimer();
+    }
+}
+
+function pauseTimer() {
+    isTimerRunning = false;
+    clearInterval(timerInterval);
+    const startBtn = document.getElementById('start-btn');
+    startBtn.innerHTML = '<i data-lucide="play"></i> Resume';
+    startBtn.classList.remove('btn-warning');
+    startBtn.classList.add('btn-success');
+    lucide.createIcons();
+}
+
+function stopTimer() {
+    isTimerRunning = false;
+    clearInterval(timerInterval);
+    timerSeconds = 0;
+    updateTimerDisplay();
+    
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    startBtn.innerHTML = '<i data-lucide="play"></i> Start';
+    startBtn.classList.remove('btn-warning');
+    startBtn.classList.add('btn-success');
+    stopBtn.disabled = true;
+    lucide.createIcons();
+}
+
+function resetTimer() {
+    timerSeconds = 0;
+    updateTimerDisplay();
+    if (isTimerRunning) {
+        pauseTimer();
+    }
+}
+
+function updateTimerDisplay() {
+    const hrs = Math.floor(timerSeconds / 3600);
+    const mins = Math.floor((timerSeconds % 3600) / 60);
+    const secs = timerSeconds % 60;
+    document.getElementById('time-display').innerText = 
+        `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+// --- Page Switch Function ---
+function switchPage(page) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+    
+    document.getElementById(`section-${page}`).classList.add('active');
+    document.getElementById(`tab-${page}`).classList.add('active');
+    lucide.createIcons();
+}
+
 // --- Init ---
 window.onload = async () => {
     renderSidebar();
     await loadBooks();
+    lucide.createIcons();
 };

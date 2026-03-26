@@ -32,7 +32,7 @@ export const getGroups = async (req: Request, res: Response) => {
 export const getGroupById = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const group = await groupService.getGroupById(id, userId);
     res.json(group);
@@ -47,7 +47,7 @@ export const getGroupById = async (req: Request, res: Response) => {
 export const updateGroup = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { name, description } = req.body;
 
     const group = await groupService.updateGroup(id, userId, { name, description });
@@ -63,7 +63,7 @@ export const updateGroup = async (req: Request, res: Response) => {
 export const deleteGroup = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     await groupService.deleteGroup(id, userId);
     res.status(204).send();
@@ -78,7 +78,7 @@ export const deleteGroup = async (req: Request, res: Response) => {
 export const inviteMember = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { userId: memberUserId } = req.body;
 
     if (!memberUserId) {
@@ -99,7 +99,7 @@ export const inviteMember = async (req: Request, res: Response) => {
 export const leaveGroup = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     await groupService.leaveGroup(id, userId);
     res.status(204).send();
@@ -115,7 +115,7 @@ export const leaveGroup = async (req: Request, res: Response) => {
 export const getGroupMembers = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const members = await groupService.getGroupMembers(id, userId);
     res.json(members);
@@ -130,7 +130,7 @@ export const getGroupMembers = async (req: Request, res: Response) => {
 export const getGroupLeaderboard = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const leaderboard = await groupService.getGroupLeaderboard(id, userId);
     res.json(leaderboard);
@@ -145,7 +145,7 @@ export const getGroupLeaderboard = async (req: Request, res: Response) => {
 export const getGroupTotalTime = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const totalTime = await groupService.getGroupTotalTime(id, userId);
     res.json(totalTime);

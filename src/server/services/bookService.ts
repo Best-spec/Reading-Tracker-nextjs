@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import { Book, ReadingLog, Status } from '@prisma/client';
+import { prisma } from '../prisma.js';
 
-const prisma = new PrismaClient();
+const prismaClient = prisma;
 
 export class BookService {
   async createBook(userId: string, bookData: {
@@ -12,8 +12,11 @@ export class BookService {
     isbn?: string;
     metadata?: any;
   }): Promise<Book> {
-    return await prisma.book.create({
-      data: bookData,
+    return await prismaClient.book.create({
+      data: {
+        ...bookData,
+        user_id: userId,
+      },
     });
   }
 
@@ -25,20 +28,20 @@ export class BookService {
     isbn: string;
     metadata: any;
   }>): Promise<Book> {
-    return await prisma.book.update({
+    return await prismaClient.book.update({
       where: { id: bookId },
       data: bookData,
     });
   }
 
   async deleteBook(bookId: string): Promise<void> {
-    await prisma.book.delete({
+    await prismaClient.book.delete({
       where: { id: bookId },
     });
   }
 
   async getUserBooks(userId: string): Promise<Book[]> {
-    return await prisma.book.findMany({
+    return await prismaClient.book.findMany({
       where: {
         user_id: userId,
       },
@@ -49,13 +52,13 @@ export class BookService {
   }
 
   async getBookById(bookId: string): Promise<Book | null> {
-    return await prisma.book.findUnique({
+    return await prismaClient.book.findUnique({
       where: { id: bookId },
     });
   }
 
   async updateReadingProgress(userId: string, bookId: string, currentPage: number, status?: Status): Promise<ReadingLog> {
-    return await prisma.readingLog.upsert({
+    return await prismaClient.readingLog.upsert({
       where: {
         userId_bookId: {
           userId,
@@ -77,7 +80,7 @@ export class BookService {
   }
 
   async getReadingProgress(userId: string, bookId: string): Promise<ReadingLog | null> {
-    return await prisma.readingLog.findUnique({
+    return await prismaClient.readingLog.findUnique({
       where: {
         userId_bookId: {
           userId,
@@ -91,7 +94,7 @@ export class BookService {
   }
 
   async getAllReadingProgress(userId: string): Promise<ReadingLog[]> {
-    return await prisma.readingLog.findMany({
+    return await prismaClient.readingLog.findMany({
       where: {
         userId,
       },
@@ -128,7 +131,7 @@ export class BookService {
       ],
     };
 
-    return await prisma.book.update({
+    return await prismaClient.book.update({
       where: { id: bookId },
       data: {
         metadata: updatedMetadata,
@@ -162,7 +165,7 @@ export class BookService {
       updatedAt: new Date(),
     };
 
-    return await prisma.book.update({
+    return await prismaClient.book.update({
       where: { id: bookId },
       data: {
         metadata: {
@@ -184,7 +187,7 @@ export class BookService {
     
     const filteredSections = sections.filter((section: any) => section.id !== sectionId);
 
-    return await prisma.book.update({
+    return await prismaClient.book.update({
       where: { id: bookId },
       data: {
         metadata: {

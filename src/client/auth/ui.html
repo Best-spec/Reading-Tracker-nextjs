@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadFlow - Dashboard & My Books</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700;800&display=swap');
+        
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --orange: #f97316;
+            --radius-xl: 1.5rem;
+            --radius-lg: 1rem;
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        /* --- LAYOUT --- */
+        .app-container { display: flex; min-height: 100vh; }
+
+        .sidebar {
+            width: 260px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 40;
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2.5rem; padding: 0 0.5rem; }
+        .logo-icon { background: var(--primary); color: white; padding: 0.5rem; border-radius: 0.75rem; display: flex; }
+        .logo-text { font-size: 1.25rem; font-weight: 800; }
+
+        .nav-menu { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.75rem;
+            border: none; background: transparent; color: var(--text-muted); font-weight: 500;
+            cursor: pointer; transition: all 0.2s; width: 100%; text-align: left;
+        }
+        .nav-item.active { background: var(--primary-light); color: var(--primary); }
+        .nav-item:hover:not(.active) { background: var(--bg); color: var(--text-main); }
+
+        .status-badge { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+        .online-pill { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 999px; font-size: 0.875rem; font-weight: 500; }
+
+        .main-content { flex: 1; margin-left: 260px; padding: 3rem; transition: all 0.3s; }
+
+        /* --- PAGE COMPONENTS --- */
+        .page-section { display: none; animation: fadeIn 0.4s ease-out; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
+        .header h2 { font-size: 1.875rem; font-weight: 800; }
+
+        /* --- BUTTONS & FORMS --- */
+        .btn {
+            padding: 0.75rem 1.25rem; border-radius: 1rem; border: none; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-danger { background: #fef2f2; color: var(--danger); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-success { background: #ecfdf5; color: var(--success); }
+        .btn-success:hover { background: var(--success); color: white; }
+        .btn-icon { padding: 0.5rem; border-radius: 0.75rem; }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-muted); }
+        .form-control {
+            width: 100%; padding: 0.75rem 1rem; border-radius: 0.75rem; border: 1px solid var(--border);
+            font-family: inherit; font-size: 1rem; transition: border-color 0.2s;
+        }
+        .form-control:focus { outline: none; border-color: var(--primary); }
+
+        /* --- MY BOOKS GRID --- */
+        .books-manager-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;
+        }
+        .book-card {
+            background: white; border-radius: var(--radius-xl); border: 1px solid var(--border);
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; position: relative;
+        }
+        .book-card-header { display: flex; gap: 1rem; }
+        .book-card-cover { width: 80px; height: 110px; border-radius: 0.5rem; object-fit: cover; }
+        .book-card-info { flex: 1; }
+        .book-card-title { font-weight: 800; font-size: 1.1rem; margin-bottom: 0.25rem; }
+        .book-card-author { color: var(--text-muted); font-size: 0.875rem; }
+        
+        .progress-section { background: var(--bg); padding: 1rem; border-radius: var(--radius-lg); }
+        .progress-header { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .progress-bar-container { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--primary); transition: width 0.3s; }
+
+        .book-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem;
+        }
+        .modal { background: white; width: 100%; max-width: 450px; border-radius: var(--radius-xl); overflow: hidden; }
+        .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 1.5rem; }
+
+        /* --- STATS & CHART (Shared from Dashboard) --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: var(--radius-xl); border: 1px solid var(--border); box-shadow: var(--shadow); }
+        .chart-container { height: 250px; display: flex; align-items: flex-end; justify-content: space-between; gap: 0.5rem; padding: 0 0.5rem; }
+        .bar { width: 100%; background: var(--primary); border-radius: 0.75rem 0.75rem 0 0; position: relative; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 1.5rem; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon"><i data-lucide="book-open"></i></div>
+                <span class="logo-text">ReadFlow</span>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-item active" onclick="switchPage('dashboard')">
+                    <i data-lucide="layout-dashboard" style="width: 20px;"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" onclick="switchPage('my-books')">
+                    <i data-lucide="library" style="width: 20px;"></i>
+                    <span>My Books</span>
+                </button>
+                <button class="nav-item">
+                    <i data-lucide="user" style="width: 20px;"></i>
+                    <span>Profile</span>
+                </button>
+                <button class="nav-item">
+                    <i data-lucide="settings" style="width: 20px;"></i>
+                    <span>Settings</span>
+                </button>
+            </nav>
+            <div class="status-badge">
+                <div id="online-status" class="online-pill"></div>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main-content">
+            
+            <!-- DASHBOARD PAGE -->
+            <section id="page-dashboard" class="page-section active">
+                <header class="header">
+                    <div>
+                        <h2>Dashboard 👋</h2>
+                        <div class="ai-insight" style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.875rem; margin-top: 0.5rem;">
+                            <i data-lucide="sparkles" style="color: #fbbf24; width: 16px;"></i>
+                            <span id="daily-insight">กำลังโหลดแรงบันดาลใจ...</span>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="stats-grid" id="stats-grid"></div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;" class="dashboard-grid">
+                    <div style="background: white; padding: 1.5rem; border-radius: var(--radius-xl); border: 1px solid var(--border);">
+                        <h3 style="margin-bottom: 1.5rem; font-weight: 800;">แนวโน้มการอ่าน</h3>
+                        <div class="chart-container" id="chart-container"></div>
+                    </div>
+                    <div style="background: white; padding: 1.5rem; border-radius: var(--radius-xl); border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h3 style="font-weight: 800;">กำลังอ่านอยู่</h3>
+                            <button onclick="handleRecommend()" style="background:none; border:none; color: var(--primary); font-weight: 700; cursor: pointer;">✨ AI แนะนำ</button>
+                        </div>
+                        <div id="dashboard-books-list" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MY BOOKS PAGE -->
+            <section id="page-my-books" class="page-section">
+                <header class="header">
+                    <div>
+                        <h2>My Books 📚</h2>
+                        <p style="color: var(--text-muted);">จัดการหนังสือและดูความคืบหน้าการอ่านของคุณ</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openBookModal()">
+                        <i data-lucide="plus"></i> เพิ่มหนังสือใหม่
+                    </button>
+                </header>
+
+                <div class="books-manager-grid" id="manager-books-list">
+                    <!-- Books will be rendered here -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- BOOK MODAL (ADD/EDIT) -->
+    <div id="book-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-book-title" style="font-weight: 800;">เพิ่มหนังสือ</h3>
+                <button onclick="closeBookModal()" style="background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="book-form">
+                    <input type="hidden" id="edit-id">
+                    <div class="form-group">
+                        <label>ชื่อหนังสือ</label>
+                        <input type="text" id="input-title" class="form-control" placeholder="เช่น Atomic Habits" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ผู้เขียน</label>
+                        <input type="text" id="input-author" class="form-control" placeholder="เช่น James Clear">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>จำนวนหน้าทั้งหมด</label>
+                            <input type="number" id="input-total" class="form-control" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>หน้าที่อ่านแล้ว</label>
+                            <input type="number" id="input-read" class="form-control" min="0" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>URL หน้าปก (เลือกได้)</label>
+                        <input type="text" id="input-cover" class="form-control" placeholder="https://...">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">บันทึกข้อมูล</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI MODAL -->
+    <div id="ai-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="ai-modal-title" style="font-weight: 800; color: var(--primary);">AI สรุปผล</h3>
+                <button onclick="closeAiModal()" style="background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" id="ai-modal-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA STATE ---
+        const apiKey = ""; 
+        let books = [
+            { id: 1, title: "The Psychology of Money", author: "Morgan Housel", totalPages: 300, readPages: 195, cover: "https://images.unsplash.com/photo-1592492159418-39f319320569?w=200&h=300&fit=crop" },
+            { id: 2, title: "Atomic Habits", author: "James Clear", totalPages: 250, readPages: 75, cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=300&fit=crop" },
+            { id: 3, title: "Deep Work", author: "Cal Newport", totalPages: 280, readPages: 238, cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=200&h=300&fit=crop" }
+        ];
+
+        // --- NAVIGATION ---
+        function switchPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.innerText.toLowerCase().includes(pageId.split('-')[0])) btn.classList.add('active');
+            });
+
+            if (pageId === 'dashboard') renderDashboard();
+            if (pageId === 'my-books') renderMyBooks();
+        }
+
+        // --- RENDERERS ---
+
+        function renderDashboard() {
+            // Stats
+            const stats = [
+                { title: "วันนี้", value: "1.2 ชม.", icon: 'clock', color: '#f97316' },
+                { title: "สัปดาห์นี้", value: "8.5 ชม.", icon: 'calendar', color: '#4f46e5' },
+                { title: "หนังสือทั้งหมด", value: `${books.length} เล่ม`, icon: 'book', color: '#10b981' }
+            ];
+            document.getElementById('stats-grid').innerHTML = stats.map(s => `
+                <div class="stat-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <div style="padding:0.75rem; border-radius:1rem; background:${s.color}15; color:${s.color}"><i data-lucide="${s.icon}"></i></div>
+                    </div>
+                    <p style="color:var(--text-muted); font-size:0.875rem;">${s.title}</p>
+                    <h4 style="font-size:1.5rem; font-weight:900;">${s.value}</h4>
+                </div>
+            `).join('');
+
+            // Chart
+            const trend = [1.5, 2.1, 0.8, 2.5, 1.2, 3.0, 2.4];
+            const days = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+            document.getElementById('chart-container').innerHTML = trend.map((val, i) => `
+                <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:0.5rem; height:100%;">
+                    <div style="width:100%; background:#f1f5f9; border-radius:0.5rem; height:100%; position:relative;">
+                        <div class="bar" style="height:${(val/3)*100}%"></div>
+                    </div>
+                    <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">${days[i]}</span>
+                </div>
+            `).join('');
+
+            // Quick List
+            document.getElementById('dashboard-books-list').innerHTML = books.slice(0, 3).map(book => {
+                const percent = Math.round((book.readPages / book.totalPages) * 100);
+                return `
+                    <div style="display:flex; gap:1rem; align-items:center;">
+                        <img src="${book.cover || 'https://via.placeholder.com/80x110'}" style="width:40px; height:55px; border-radius:4px; object-fit:cover;">
+                        <div style="flex:1; min-width:0;">
+                            <p style="font-weight:700; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${book.title}</p>
+                            <div style="height:4px; background:#f1f5f9; border-radius:99px; margin-top:4px; overflow:hidden;">
+                                <div style="height:100%; background:var(--primary); width:${percent}%"></div>
+                            </div>
+                        </div>
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">${percent}%</span>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function renderMyBooks() {
+            const container = document.getElementById('manager-books-list');
+            container.innerHTML = books.map(book => {
+                const percent = Math.round((book.readPages / book.totalPages) * 100);
+                return `
+                    <div class="book-card">
+                        <div class="book-card-header">
+                            <img src="${book.cover || 'https://via.placeholder.com/150x200'}" class="book-card-cover">
+                            <div class="book-card-info">
+                                <h4 class="book-card-title">${book.title}</h4>
+                                <p class="book-card-author">${book.author || 'ไม่ระบุผู้เขียน'}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-section">
+                            <div class="progress-header">
+                                <span>Progress</span>
+                                <span>${book.readPages} / ${book.totalPages} หน้า</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" style="width: ${percent}%"></div>
+                            </div>
+                            <div style="text-align:right; font-size:0.7rem; font-weight:800; color:var(--primary); margin-top:0.25rem;">${percent}%</div>
+                        </div>
+
+                        <div class="book-actions">
+                            <button class="btn btn-success btn-icon" onclick="openBookModal(${book.id})" title="แก้ไข">
+                                <i data-lucide="edit-3" style="width:16px;"></i>
+                            </button>
+                            <button class="btn btn-danger btn-icon" onclick="deleteBook(${book.id})" title="ลบ">
+                                <i data-lucide="trash-2" style="width:16px;"></i>
+                            </button>
+                            <button class="btn btn-outline btn-icon" style="margin-left:auto;" onclick="handleAIsurvey(${book.id})" title="AI สรุป">
+                                <i data-lucide="sparkles" style="width:16px; color:var(--primary);"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // --- CRUD OPERATIONS ---
+
+        function openBookModal(bookId = null) {
+            const modal = document.getElementById('book-modal');
+            const titleEl = document.getElementById('modal-book-title');
+            const form = document.getElementById('book-form');
+            form.reset();
+            
+            if (bookId) {
+                const book = books.find(b => b.id === bookId);
+                titleEl.innerText = "แก้ไขหนังสือ";
+                document.getElementById('edit-id').value = book.id;
+                document.getElementById('input-title').value = book.title;
+                document.getElementById('input-author').value = book.author;
+                document.getElementById('input-total').value = book.totalPages;
+                document.getElementById('input-read').value = book.readPages;
+                document.getElementById('input-cover').value = book.cover;
+            } else {
+                titleEl.innerText = "เพิ่มหนังสือใหม่";
+                document.getElementById('edit-id').value = "";
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeBookModal() {
+            document.getElementById('book-modal').style.display = 'none';
+        }
+
+        document.getElementById('book-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const newBook = {
+                title: document.getElementById('input-title').value,
+                author: document.getElementById('input-author').value,
+                totalPages: parseInt(document.getElementById('input-total').value),
+                readPages: parseInt(document.getElementById('input-read').value),
+                cover: document.getElementById('input-cover').value || 'https://images.unsplash.com/photo-1543004218-ee14110497f8?w=200&h=300&fit=crop'
+            };
+
+            if (id) {
+                // Update
+                const index = books.findIndex(b => b.id == id);
+                books[index] = { ...books[index], ...newBook };
+            } else {
+                // Add
+                books.push({ id: Date.now(), ...newBook });
+            }
+
+            closeBookModal();
+            renderMyBooks();
+        });
+
+        function deleteBook(id) {
+            if (confirm('จะลบเล่มนี้จริงๆ เหรอวะ? กองดองจะหายไปเลยนะ!')) {
+                books = books.filter(b => b.id !== id);
+                renderMyBooks();
+            }
+        }
+
+        // --- AI LOGIC (GEMINI) ---
+
+        async function fetchAI(prompt) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const data = await response.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text;
+        }
+
+        async function handleAIsurvey(bookId) {
+            const book = books.find(b => b.id === bookId);
+            openAiModal("Gemini กำลังอ่านสรุป...", true);
+            try {
+                const res = await fetchAI(`Summarize 3 key points of "${book.title}" by ${book.author} in Thai.`);
+                showAiContent(book.title, res);
+            } catch (e) { showAiContent("Error", "ต่อ AI ไม่ติดว่ะเพื่อน"); }
+        }
+
+        async function handleRecommend() {
+            openAiModal("Gemini กำลังเลือกเล่มเด็ดให้...", true);
+            try {
+                const titles = books.map(b => b.title).join(", ");
+                const res = await fetchAI(`Recommend 2 books to read next based on: ${titles}. Explain why in Thai.`);
+                showAiContent("AI แนะนำหนังสือใหม่", res);
+            } catch (e) { showAiContent("Error", "AI มึนตึ้บ ลองใหม่นะ"); }
+        }
+
+        // --- MODAL UTILS ---
+        function openAiModal(title, loading) {
+            document.getElementById('ai-modal').style.display = 'flex';
+            document.getElementById('ai-modal-title').innerText = title;
+            if (loading) document.getElementById('ai-modal-content').innerHTML = '<div style="text-align:center; padding:2rem;"><i data-lucide="loader-2" style="animation:spin 1s linear infinite;"></i></div>';
+            lucide.createIcons();
+        }
+        function closeAiModal() { document.getElementById('ai-modal').style.display = 'none'; }
+        function showAiContent(title, text) {
+            document.getElementById('ai-modal-title').innerText = title;
+            document.getElementById('ai-modal-content').innerHTML = `<p style="line-height:1.6; white-space:pre-wrap;">${text}</p><button class="btn btn-primary" style="margin-top:1.5rem; width:100%;" onclick="closeAiModal()">เข้าใจแล้ว</button>`;
+        }
+
+        function updateOnlineStatus() {
+            const isOnline = navigator.onLine;
+            const el = document.getElementById('online-status');
+            el.innerHTML = `<i data-lucide="${isOnline ? 'wifi' : 'wifi-off'}" style="width:16px;"></i> ${isOnline ? 'Online' : 'Offline'}`;
+            el.style.background = isOnline ? '#f0fdf4' : '#fef2f2';
+            el.style.color = isOnline ? '#166534' : '#991b1b';
+            lucide.createIcons();
+        }
+
+        // --- INIT ---
+        window.addEventListener('load', () => {
+            renderDashboard();
+            updateOnlineStatus();
+            fetchAI("Generate a very short motivational quote about reading in Thai (max 8 words).").then(t => document.getElementById('daily-insight').innerText = t || "เริ่มอ่านเลย!");
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+        });
+
+        const style = document.createElement('style');
+        style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+        document.head.append(style);
+    </script>
+
+</body>
+</html>

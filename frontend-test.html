@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadFlow - Frontend API Test</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .btn-danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
+        .btn-info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .result-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        
+        .quick-tests {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .token-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+        .hidden { display: none; }
+        .log-scroll { max-height: 400px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 ReadFlow Frontend API Test</h1>
+        <!-- Connection Status -->
+        <div class="test-section">
+            <h2>📡 Connection Status</h2>
+            <p>Backend URL: <code>http://localhost:3000/api</code></p>
+            <p>Status: <span id="connection-status"><span class="status-indicator status-offline"></span>Checking...</span></p>
+            <button type="button" onclick="checkConnection()">🔄 Check Connection</button>
+            <div id="connection-result" class="result-box hidden"></div>
+        </div>
+
+        <!-- Authentication -->
+        <div class="test-section">
+            <h2>🔐 Authentication</h2>
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="auth-username" value="webtestuser">
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="auth-email" value="webtest@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="auth-password" value="password123" autocomplete="new-password">
+            </div>
+            <button type="button" onclick="testRegister()" class="btn-success">📝 Register</button>
+            <button type="button" onclick="testLogin()" class="btn-info">🔑 Login</button>
+            <div id="auth-result" class="result-box hidden"></div>
+            <div id="token-display" class="token-display hidden"></div>
+        </div>
+
+        <!-- Books -->
+        <div class="test-section">
+            <h2>📚 Books</h2>
+            <div class="form-group">
+                <label>Book Title:</label>
+                <input type="text" id="book-title" value="Test Book from Web">
+            </div>
+            <div class="form-group">
+                <label>Author:</label>
+                <input type="text" id="book-author" value="Web Test Author">
+            </div>
+            <div class="form-group">
+                <label>Total Pages:</label>
+                <input type="number" id="book-pages" value="250">
+            </div>
+            <button type="button" onclick="testCreateBook()" class="btn-success">➕ Create Book</button>
+            <button type="button" onclick="testGetBooks()" class="btn-info">📖 Get All Books</button>
+            <button type="button" onclick="testDeleteAllBooks()" class="btn-danger">🗑️ Delete All</button>
+            <div id="books-result" class="result-box hidden"></div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="test-section">
+            <h2>📊 Dashboard</h2>
+            <div class="quick-tests">
+                <button type="button" onclick="testDashboardSummary()" class="btn-info">📈 Summary</button>
+                <button type="button" onclick="testReadingTrend()" class="btn-info">📉 Trend</button>
+                <button type="button" onclick="testTopBooks()" class="btn-info">🏆 Top Books</button>
+            </div>
+            <div id="dashboard-result" class="result-box hidden"></div>
+        </div>
+
+        <!-- Groups -->
+        <div class="test-section">
+            <h2>👥 Groups</h2>
+            <div class="form-group">
+                <label>Group Name:</label>
+                <input type="text" id="group-name" value="Web Test Group">
+            </div>
+            <div class="form-group">
+                <label>Description:</label>
+                <input type="text" id="group-desc" value="Test group from web frontend">
+            </div>
+            <button type="button" onclick="testCreateGroup()" class="btn-success">➕ Create Group</button>
+            <button type="button" onclick="testGetGroups()" class="btn-info">👥 Get Groups</button>
+            <div id="groups-result" class="result-box hidden"></div>
+        </div>
+
+        <!-- Friends -->
+        <div class="test-section">
+            <h2>🤝 Friends</h2>
+            <button type="button" onclick="testGetFriends()" class="btn-info">👥 Get Friends</button>
+            <button type="button" onclick="testGetOnlineFriends()" class="btn-info">🟢 Online Friends</button>
+            <div id="friends-result" class="result-box hidden"></div>
+        </div>
+
+        <!-- Reading Sessions -->
+        <div class="test-section">
+            <h2>⏱️ Reading Sessions</h2>
+            <div class="form-group">
+                <label>Book ID (for session):</label>
+                <input type="text" id="session-book-id" placeholder="Enter book ID">
+            </div>
+            <button type="button" onclick="testStartSession()" class="btn-success">▶️ Start Session</button>
+            <button type="button" onclick="testGetActiveSession()" class="btn-info">⏯️ Active Session</button>
+            <button type="button" onclick="testGetHistory()" class="btn-info">📜 History</button>
+            <div id="session-result" class="result-box hidden"></div>
+        </div>
+
+        <!-- Console Log -->
+        <div class="test-section">
+            <h2>🖥️ Test Log</h2>
+            <button type="button" onclick="clearLog()" class="btn-danger">🗑️ Clear Log</button>
+            <div id="test-log" class="result-box result-info log-scroll"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:3000/api';
+        let authToken = localStorage.getItem('readflow_token') || '';
+        let currentUser = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Frontend API Test Page Loaded');
+            log(`🔧 API Base: ${API_BASE}`);
+            if (authToken) {
+                log('🔐 Token found in localStorage');
+                document.getElementById('token-display').textContent = `Token: ${authToken.substring(0, 50)}...`;
+                document.getElementById('token-display').classList.remove('hidden');
+            }
+            checkConnection();
+        });
+
+        // Utility: Log to test log
+        function log(message, type = 'info') {
+            const logBox = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            logBox.innerHTML += `[${timestamp}] ${emoji} ${message}\n`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('test-log').innerHTML = '';
+        }
+
+        // Utility: Show result
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.classList.remove('hidden', 'result-success', 'result-error');
+            element.classList.add(isError ? 'result-error' : 'result-success');
+            element.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+        }
+
+        // Utility: API Call
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include'
+            };
+            
+            if (authToken) {
+                options.headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+            
+            const response = await fetch(`${API_BASE}${endpoint}`, options);
+            const data = await response.json().catch(() => null);
+            return { status: response.status, data };
+        }
+
+        // Check Connection
+        async function checkConnection() {
+            log('🔍 Checking backend connection...');
+            try {
+                const result = await apiCall('/auth/login', 'POST', { 
+                    email: 'test@example.com', 
+                    password: 'test' 
+                });
+                
+                const statusEl = document.getElementById('connection-status');
+                if (result.status === 400 || result.status === 200) {
+                    statusEl.innerHTML = '<span class="status-indicator status-online"></span>Connected ✅';
+                    showResult('connection-result', { status: 'Connected', server: 'Online' });
+                    log('✅ Backend is online and responding', 'success');
+                } else {
+                    statusEl.innerHTML = '<span class="status-indicator status-offline"></span>Offline ❌';
+                    showResult('connection-result', { error: 'Backend not responding' }, true);
+                    log('❌ Backend connection failed', 'error');
+                }
+            } catch (error) {
+                document.getElementById('connection-status').innerHTML = '<span class="status-indicator status-offline"></span>Error ❌';
+                showResult('connection-result', { error: error.message }, true);
+                log(`❌ Connection error: ${error.message}`, 'error');
+            }
+        }
+
+        // Register
+        async function testRegister() {
+            const username = document.getElementById('auth-username').value;
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            log(`📝 Registering user: ${username}...`);
+            
+            try {
+                const result = await apiCall('/auth/register', 'POST', {
+                    username,
+                    email,
+                    password
+                });
+                
+                if (result.status === 201) {
+                    showResult('auth-result', result.data);
+                    log('✅ Registration successful', 'success');
+                } else {
+                    showResult('auth-result', result.data, true);
+                    log(`❌ Registration failed: ${result.data?.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showResult('auth-result', { error: error.message }, true);
+                log(`❌ Registration error: ${error.message}`, 'error');
+            }
+        }
+
+        // Login
+        async function testLogin() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            log(`🔑 Logging in: ${email}...`);
+            
+            try {
+                const result = await apiCall('/auth/login', 'POST', {
+                    email,
+                    password
+                });
+                
+                if (result.status === 200 && result.data.token) {
+                    authToken = result.data.token;
+                    currentUser = result.data.user;
+                    localStorage.setItem('readflow_token', authToken);
+                    
+                    showResult('auth-result', result.data);
+                    document.getElementById('token-display').textContent = `Token: ${authToken.substring(0, 50)}...`;
+                    document.getElementById('token-display').classList.remove('hidden');
+                    log(`✅ Login successful! Welcome ${result.data.user.username}`, 'success');
+                } else {
+                    showResult('auth-result', result.data, true);
+                    log(`❌ Login failed: ${result.data?.message || 'Invalid credentials'}`, 'error');
+                }
+            } catch (error) {
+                showResult('auth-result', { error: error.message }, true);
+                log(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+
+        // Create Book
+        async function testCreateBook() {
+            const title = document.getElementById('book-title').value;
+            const author = document.getElementById('book-author').value;
+            const totalPages = parseInt(document.getElementById('book-pages').value);
+            
+            log(`📚 Creating book: ${title}...`);
+            
+            try {
+                const result = await apiCall('/books', 'POST', {
+                    title,
+                    author,
+                    totalPages
+                });
+                
+                if (result.status === 201) {
+                    showResult('books-result', result.data);
+                    document.getElementById('session-book-id').value = result.data.id;
+                    log(`✅ Book created: ${result.data.id}`, 'success');
+                } else {
+                    showResult('books-result', result.data, true);
+                    log(`❌ Failed: ${result.data?.message || 'Error'}`, 'error');
+                }
+            } catch (error) {
+                showResult('books-result', { error: error.message }, true);
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Get Books
+        async function testGetBooks() {
+            log('📖 Fetching books...');
+            
+            try {
+                const result = await apiCall('/books');
+                
+                if (result.status === 200) {
+                    showResult('books-result', result.data);
+                    log(`✅ Found ${result.data.length} books`, 'success');
+                    if (result.data.length > 0) {
+                        document.getElementById('session-book-id').value = result.data[0].id;
+                    }
+                } else {
+                    showResult('books-result', result.data, true);
+                    log(`❌ Failed: ${result.data?.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('books-result', { error: error.message }, true);
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Delete All Books
+        async function testDeleteAllBooks() {
+            if (!confirm('Delete all your books?')) return;
+            
+            log('🗑️ Deleting all books...');
+            
+            try {
+                const result = await apiCall('/books');
+                if (result.status === 200 && Array.isArray(result.data)) {
+                    for (const book of result.data) {
+                        await apiCall(`/books/${book.id}`, 'DELETE');
+                    }
+                    showResult('books-result', { message: 'All books deleted' });
+                    log(`✅ Deleted ${result.data.length} books`, 'success');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Dashboard Tests
+        async function testDashboardSummary() {
+            log('📊 Fetching dashboard summary...');
+            try {
+                const result = await apiCall('/dashboard/summary');
+                showResult('dashboard-result', result.data);
+                log(result.status === 200 ? '✅ Summary fetched' : '❌ Failed', result.status === 200 ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testReadingTrend() {
+            log('📉 Fetching reading trend...');
+            try {
+                const result = await apiCall('/dashboard/trend');
+                showResult('dashboard-result', result.data);
+                log(result.status === 200 ? '✅ Trend fetched' : '❌ Failed', result.status === 200 ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTopBooks() {
+            log('🏆 Fetching top books...');
+            try {
+                const result = await apiCall('/dashboard/top-books');
+                showResult('dashboard-result', result.data);
+                log(result.status === 200 ? '✅ Top books fetched' : '❌ Failed', result.status === 200 ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Group Tests
+        async function testCreateGroup() {
+            const name = document.getElementById('group-name').value;
+            const description = document.getElementById('group-desc').value;
+            
+            log(`👥 Creating group: ${name}...`);
+            
+            try {
+                const result = await apiCall('/groups', 'POST', { name, description });
+                showResult('groups-result', result.data);
+                log(result.status === 201 ? `✅ Group created: ${result.data.id}` : '❌ Failed', result.status === 201 ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetGroups() {
+            log('👥 Fetching groups...');
+            try {
+                const result = await apiCall('/groups');
+                showResult('groups-result', result.data);
+                log(result.status === 200 ? `✅ Found ${result.data.length} groups` : '❌ Failed', result.status === 200 ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Friend Tests
+        async function testGetFriends() {
+            log('🤝 Fetching friends...');
+            try {
+                const result = await apiCall('/friends');
+                showResult('friends-result', result.data);
+                log(result.status === 200 ? `✅ Found ${result.data.data?.length || 0} friends` : '❌ Failed', result.status === 200 ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetOnlineFriends() {
+            log('🟢 Fetching online friends...');
+            try {
+                const result = await apiCall('/friends/online');
+                showResult('friends-result', result.data);
+                log(result.status === 200 ? `✅ Found ${result.data.data?.length || 0} online friends` : '❌ Failed', result.status === 200 ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Session Tests
+        async function testStartSession() {
+            const bookId = document.getElementById('session-book-id').value;
+            if (!bookId) {
+                alert('Please enter a book ID');
+                return;
+            }
+            
+            log(`⏱️ Starting reading session for book: ${bookId}...`);
+            
+            try {
+                const result = await apiCall('/reading-sessions/start', 'POST', { bookId });
+                showResult('session-result', result.data);
+                log(result.status === 201 ? '✅ Session started' : '❌ Failed', result.status === 201 ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetActiveSession() {
+            log('⏯️ Fetching active session...');
+            try {
+                const result = await apiCall('/reading-sessions/active');
+                showResult('session-result', result.data);
+                log(result.status === 200 ? '✅ Active session found' : 'ℹ️ No active session', result.status === 200 ? 'success' : 'info');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetHistory() {
+            log('📜 Fetching reading history...');
+            try {
+                const result = await apiCall('/reading-sessions/history');
+                showResult('session-result', result.data);
+                log(result.status === 200 ? `✅ Found ${result.data.data?.length || 0} sessions` : '❌ Failed', result.status === 200 ? 'success' : 'error');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

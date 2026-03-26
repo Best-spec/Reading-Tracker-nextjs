@@ -6,7 +6,7 @@
     <title>ReadFlow - Settings</title>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="layout.css">
     <link rel="stylesheet" href="settings.css">
 </head>
 <body>
@@ -18,7 +18,24 @@
                 <div class="logo-icon"><i data-lucide="book-open"></i></div>
                 <span class="logo-text">ReadFlow</span>
             </div>
-            <nav class="nav-menu" id="nav-menu"></nav>
+            <nav id="nav-menu" class="nav-menu">
+                <button type="button" class="nav-item" onclick="location.href='dashboard.html'">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button type="button" class="nav-item" onclick="location.href='books.html'">
+                    <i data-lucide="library"></i>
+                    <span>My Books</span>
+                </button>
+                <button type="button" class="nav-item" onclick="location.href='profile.html'">
+                    <i data-lucide="user"></i>
+                    <span>Profile</span>
+                </button>
+                <button type="button" class="nav-item active" onclick="location.href='settings.html'">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </button>
+            </nav>
             <div class="status-badge">
                 <div id="online-status" class="online-pill"></div>
             </div>
@@ -29,7 +46,10 @@
             <header class="header">
                 <div>
                     <h2>การตั้งค่า</h2>
-                    <p class="subheading">ปรับแต่งบัญชีและวิธีการใช้งานของคุณ</p>
+                    <div class="ai-insight">
+                        <i data-lucide="settings" class="icon-primary"></i>
+                        <span>ปรับแต่งบัญชีและวิธีการใช้งานของคุณ</span>
+                    </div>
                 </div>
             </header>
 
@@ -38,7 +58,7 @@
                 <section class="section-card">
                     <div class="section-header">
                         <div class="section-title">
-                            <i data-lucide="lock" style="color: var(--primary)"></i>
+                            <i data-lucide="lock" class="icon-primary"></i>
                             เปลี่ยนรหัสผ่าน
                         </div>
                     </div>
@@ -46,15 +66,15 @@
                     <form id="password-form">
                         <div class="form-group">
                             <label>รหัสผ่านปัจจุบัน</label>
-                            <input type="password" id="current-password" class="form-control" required placeholder="********" />
+                            <input type="password" id="current-password" class="form-control" required placeholder="********" autocomplete="current-password">
                         </div>
                         <div class="form-group">
                             <label>รหัสผ่านใหม่</label>
-                            <input type="password" id="new-password" class="form-control" required placeholder="อย่างน้อย 8 ตัว" minlength="8" />
+                            <input type="password" id="new-password" class="form-control" required placeholder="อย่างน้อย 8 ตัว" minlength="8" autocomplete="new-password">
                         </div>
                         <div class="form-group">
                             <label>ยืนยันรหัสผ่านใหม่</label>
-                            <input type="password" id="confirm-password" class="form-control" required placeholder="กรอกซ้ำอีกครั้ง" />
+                            <input type="password" id="confirm-password" class="form-control" required placeholder="กรอกซ้ำอีกครั้ง" autocomplete="new-password">
                         </div>
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">อัปเดตรหัสผ่าน</button>
@@ -67,7 +87,7 @@
                 <section class="section-card">
                     <div class="section-header">
                         <div class="section-title">
-                            <i data-lucide="wifi" style="color: var(--primary)"></i>
+                            <i data-lucide="wifi" class="icon-primary"></i>
                             สถานะออนไลน์
                         </div>
                     </div>
@@ -75,7 +95,7 @@
                     <div class="toggle-row">
                         <span>แสดงว่าออนไลน์</span>
                         <label class="toggle-switch">
-                            <input type="checkbox" id="online-toggle" />
+                            <input type="checkbox" id="online-toggle">
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -86,12 +106,12 @@
                 <section class="section-card">
                     <div class="section-header">
                         <div class="section-title">
-                            <i data-lucide="trash-2" style="color: var(--danger)"></i>
+                            <i data-lucide="trash-2" class="icon-danger"></i>
                             ลบบัญชี
                         </div>
                     </div>
                     <p>เมื่อลบบัญชี ข้อมูลทั้งหมดจะถูกลบออกจากระบบและไม่สามารถกู้คืนได้</p>
-                    <button class="btn btn-outline btn-danger" id="delete-account-btn">
+                    <button type="button" class="btn btn-outline btn-danger" id="delete-account-btn">
                         <i data-lucide="trash-2"></i> ลบบัญชี
                     </button>
                 </section>
@@ -102,14 +122,14 @@
     <div id="confirm-delete-modal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
-                <h3 style="color: var(--danger);">ยืนยันการลบบัญชี</h3>
-                <button onclick="closeDeleteModal()" style="background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
+                <h3 class="modal-title-danger">ยืนยันการลบบัญชี</h3>
+                <button type="button" onclick="closeDeleteModal()" class="btn-close" aria-label="ปิด"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <p>คุณแน่ใจหรือไม่ว่าต้องการลบบัญชีของคุณ? กระบวนการนี้ไม่สามารถย้อนกลับได้</p>
                 <div class="modal-actions">
-                    <button class="btn" onclick="closeDeleteModal()">ยกเลิก</button>
-                    <button class="btn btn-danger" onclick="confirmDeleteAccount()">ลบเลย</button>
+                    <button type="button" class="btn" onclick="closeDeleteModal()">ยกเลิก</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteAccount()">ลบเลย</button>
                 </div>
             </div>
         </div>

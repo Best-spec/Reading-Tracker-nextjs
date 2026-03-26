@@ -1,6 +1,5 @@
-import { PrismaClient, FriendStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { FriendStatus } from '@prisma/client';
+import { prisma } from '../prisma.js';
 
 export class FriendService {
   async sendFriendRequest(followerId: string, followingId: string) {

@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma.js';
 
 const startOfDay = (date: Date) => {
   const d = new Date(date);
@@ -170,7 +168,11 @@ export class StatsService {
 
   // สถิติรวมทั้งหมด
   async getAllTimeStats(userId: string) {
-    const sessions = await prisma.$queryRaw`
+    const sessions = await prisma.$queryRaw<{
+      minutesRead: number;
+      pagesRead: number;
+      startTime: Date;
+    }[]>`
       SELECT * FROM "ReadingSession" 
       WHERE "readingLogId" IN (
         SELECT id FROM "ReadingLog" WHERE "userId" = ${userId}
@@ -181,7 +183,7 @@ export class StatsService {
       return sum + (session.minutesRead || 0);
     }, 0);
 
-    const firstSession = sessions.sort((a: any, b: any) => 
+    const firstSession = sessions.sort((a, b) => 
       new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     )[0];
 

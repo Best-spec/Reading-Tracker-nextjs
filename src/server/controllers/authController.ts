@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
-import { Request, Response } from 'express';
-import e from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { validateUserData } from '../utils/validate.js';
 import { User, AuthenticatedRequest } from '../types/user.js';
@@ -34,6 +33,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
         res.status(200).json({ 
             message: 'Login สำเร็จ!',
+            token: result.token,
             user: { username: result.user.username },
         });
 
@@ -43,18 +43,28 @@ export const loginUser = async (req: Request, res: Response) => {
 };
 
 // ฟังก์ชันนี้จะเป็น middleware สำหรับตรวจสอบ token ใน header หรือ cookie
-export const middleware = (req: Request, res: Response, next: Function) => {
+export const middleware = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1] || req.cookies.token;
-    const JWT_SECRET: string = process.env.JWT_SECRET as string;
+    const JWT_SECRET = process.env.JWT_SECRET;
+    
+    if (!JWT_SECRET) {
+        console.error('JWT_SECRET is not defined');
+        return res.status(500).json({ message: 'Server configuration error' });
+    }
+    
     if (!token) {
         return res.status(401).json({ message: 'ไม่มี token!' });
     }
-    jwt.verify(token, JWT_SECRET as string, (err: any, user: any) => {
+    
+    jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
         if (err) {
             return res.status(403).json({ message: 'Token ไม่ถูกต้อง!' });
         }
-        (req as AuthenticatedRequest).user = user as { id: number; username: string;};
+        (req as AuthenticatedRequest).user = { 
+            id: String(decoded.id), 
+            username: decoded.username 
+        };
         next();
     });
 }
