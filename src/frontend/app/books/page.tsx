@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Filter, Search, X, BookOpen, Clock, Check, Calendar, Edit, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { api } from '@/lib/api'
 
 interface Book {
   id: string
@@ -60,43 +61,49 @@ export default function BooksPage() {
 
   const loadBooks = async () => {
     try {
-      // Mock data - replace with API call
-      const mockBooks: Book[] = [
+      setLoading(true)
+      const booksData = await api.getBooks()
+      setBooks(booksData)
+    } catch (error) {
+      console.error('Failed to load books:', error)
+      // Use mock data as fallback
+      const mockBooks = [
         {
           id: '1',
           title: 'The Great Gatsby',
           author: 'F. Scott Fitzgerald',
-          coverUrl: 'https://via.placeholder.com/120x180?text=GG',
-          status: 'READING',
+          coverUrl: 'https://via.placeholder.com/60x90?text=GG',
+          status: 'READING' as const,
           currentPage: 120,
           totalPages: 180,
-          startDate: '2024-01-15',
-          rating: 4
+          rating: 5,
+          genre: 'Classic Fiction'
         },
         {
           id: '2',
           title: 'To Kill a Mockingbird',
           author: 'Harper Lee',
-          coverUrl: 'https://via.placeholder.com/120x180?text=TKAM',
-          status: 'FINISHED',
+          coverUrl: 'https://via.placeholder.com/60x90?text=TKAM',
+          status: 'FINISHED' as const,
           currentPage: 324,
           totalPages: 324,
-          startDate: '2024-01-01',
-          finishDate: '2024-01-14',
-          rating: 5
+          rating: 4,
+          genre: 'Classic Fiction'
         },
         {
           id: '3',
           title: '1984',
           author: 'George Orwell',
-          coverUrl: 'https://via.placeholder.com/120x180?text=1984',
-          status: 'PLAN',
-          totalPages: 328
+          coverUrl: 'https://via.placeholder.com/60x90?text=1984',
+          status: 'PLAN' as const,
+          currentPage: 0,
+          totalPages: 328,
+          genre: 'Dystopian'
         }
       ]
       setBooks(mockBooks)
-    } catch (error) {
-      console.error('Failed to load books:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -169,20 +176,10 @@ export default function BooksPage() {
 
       if (editingBook) {
         // Update existing book
-        setBooks(prev => prev.map(book => 
-          book.id === editingBook.id 
-            ? { ...book, ...bookData }
-            : book
-        ))
+        await handleEditBook()
       } else {
         // Add new book
-        const newBook: Book = {
-          id: Date.now().toString(),
-          ...bookData,
-          startDate: bookData.status === 'READING' ? new Date().toISOString().split('T')[0] : undefined,
-          finishDate: bookData.status === 'FINISHED' ? new Date().toISOString().split('T')[0] : undefined
-        }
-        setBooks(prev => [...prev, newBook])
+        await handleAddBook()
       }
 
       closeModal()
@@ -191,8 +188,112 @@ export default function BooksPage() {
     }
   }
 
-  const deleteBook = async (bookId: string) => {
-    if (confirm('Are you sure you want to delete this book?')) {
+  const handleAddBook = async () => {
+    try {
+      // Try to create book via API
+      const newBook = await api.createBook(formData)
+      setBooks(prev => [newBook, ...prev])
+      setShowModal(false)
+      setFormData({
+        title: '',
+        author: '',
+        totalPages: '',
+        currentPage: '',
+        status: 'PLAN'
+      })
+    } catch (error) {
+      console.error('Failed to add book:', error)
+      // Fallback: add to local state
+      const newBook: Book = {
+        id: Date.now().toString(),
+        title: formData.title,
+        author: formData.author,
+        totalPages: parseInt(formData.totalPages) || 0,
+        currentPage: parseInt(formData.currentPage) || 0,
+        status: formData.status,
+        startDate: formData.status === 'READING' ? new Date().toISOString().split('T')[0] : undefined,
+        finishDate: formData.status === 'FINISHED' ? new Date().toISOString().split('T')[0] : undefined
+      }
+      setBooks(prev => [newBook, ...prev])
+      setShowModal(false)
+      setFormData({
+        title: '',
+        author: '',
+        totalPages: '',
+        currentPage: '',
+        status: 'PLAN'
+      })
+    }
+  }
+
+  const handleEditBook = async () => {
+    if (!editingBook) return
+
+    try {
+      // Try to update book via API
+      await api.updateBook(editingBook.id, formData)
+      setBooks(prev => prev.map(book => 
+        book.id === editingBook.id 
+          ? { 
+              ...book, 
+              title: formData.title,
+              author: formData.author,
+              totalPages: parseInt(formData.totalPages) || 0,
+              currentPage: parseInt(formData.currentPage) || 0,
+              status: formData.status,
+              startDate: formData.status === 'READING' ? new Date().toISOString().split('T')[0] : book.startDate,
+              finishDate: formData.status === 'FINISHED' ? new Date().toISOString().split('T')[0] : book.finishDate
+            }
+          : book
+      ))
+      setShowModal(false)
+      setEditingBook(null)
+      setFormData({
+        title: '',
+        author: '',
+        totalPages: '',
+        currentPage: '',
+        status: 'PLAN'
+      })
+    } catch (error) {
+      console.error('Failed to update book:', error)
+      // Fallback: update local state
+      setBooks(prev => prev.map(book => 
+        book.id === editingBook.id 
+          ? { 
+              ...book, 
+              title: formData.title,
+              author: formData.author,
+              totalPages: parseInt(formData.totalPages) || 0,
+              currentPage: parseInt(formData.currentPage) || 0,
+              status: formData.status,
+              startDate: formData.status === 'READING' ? new Date().toISOString().split('T')[0] : book.startDate,
+              finishDate: formData.status === 'FINISHED' ? new Date().toISOString().split('T')[0] : book.finishDate
+            }
+          : book
+      ))
+      setShowModal(false)
+      setEditingBook(null)
+      setFormData({
+        title: '',
+        author: '',
+        totalPages: '',
+        currentPage: '',
+        status: 'PLAN'
+      })
+    }
+  }
+
+  const handleDeleteBook = async (bookId: string) => {
+    if (!confirm('Are you sure you want to delete this book?')) return
+
+    try {
+      // Try to delete book via API
+      await api.deleteBook(bookId)
+      setBooks(prev => prev.filter(book => book.id !== bookId))
+    } catch (error) {
+      console.error('Failed to delete book:', error)
+      // Fallback: remove from local state
       setBooks(prev => prev.filter(book => book.id !== bookId))
     }
   }
@@ -359,7 +460,7 @@ export default function BooksPage() {
                       Edit
                     </button>
                     <button
-                      onClick={() => deleteBook(book.id)}
+                      onClick={() => handleDeleteBook(book.id)}
                       className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                     >
                       <Trash2 className="w-3 h-3" />

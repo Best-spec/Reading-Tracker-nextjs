@@ -1,117 +1,110 @@
-const API_BASE_URL = 'http://127.0.0.1:5000'
+// Export all feature-based API modules
+export { authApi } from './api/auth'
+export { userApi } from './api/user'
+export { booksApi } from './api/books'
+export { sessionsApi } from './api/sessions'
+export { statsApi } from './api/stats'
+export { friendsApi } from './api/friends'
+export { groupsApi } from './api/groups'
+export { calendarApi } from './api/calendar'
+export { challengesApi } from './api/challenges'
+export { achievementsApi } from './api/achievements'
+export { settingsApi } from './api/settings'
 
+// Export the base request function for direct use if needed
+export { request } from './api/base'
+
+// Legacy export for backward compatibility
 export const api = {
-  async request(endpoint: string, options: RequestInit = {}) {
-    const url = `${API_BASE_URL}${endpoint}`
-    
-    try {
-      console.log(`Making request to: ${url}`)
-      
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        credentials: 'include',
-      })
+  // Authentication
+  register: (userData: { email: string; username: string; password: string }) => 
+    import('./api/auth').then(m => m.authApi.register(userData)),
+  login: (credentials: { email: string; password: string }) => 
+    import('./api/auth').then(m => m.authApi.login(credentials)),
+  verifyToken: (token: string) => 
+    import('./api/auth').then(m => m.authApi.verifyToken(token)),
+  checkAuth: () => 
+    import('./api/auth').then(m => m.authApi.checkAuth()),
 
-      console.log(`Response status: ${response.status}`)
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
-      }
+  // User profile
+  getProfile: () => 
+    import('./api/user').then(m => m.userApi.getProfile()),
+  updateProfile: (profileData: any) => 
+    import('./api/user').then(m => m.userApi.updateProfile(profileData)),
 
-      return await response.json()
-    } catch (error) {
-      console.error('API Request failed:', error)
-      
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        throw new Error('Cannot connect to backend server. Please make sure the server is running on http://127.0.0.1:5000')
-      }
-      
-      throw error
-    }
-  },
+  // Books
+  getBooks: () => 
+    import('./api/books').then(m => m.booksApi.getBooks()),
+  createBook: (bookData: any) => 
+    import('./api/books').then(m => m.booksApi.createBook(bookData)),
+  updateBook: (bookId: string, bookData: any) => 
+    import('./api/books').then(m => m.booksApi.updateBook(bookId, bookData)),
+  deleteBook: (bookId: string) => 
+    import('./api/books').then(m => m.booksApi.deleteBook(bookId)),
 
-  async register(userData: { email: string; username: string; password: string }) {
-    try {
-      return this.request('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(userData),
-      })
-    } catch (error) {
-      // If backend is not available, provide development mode response
-      if (error instanceof Error && error.message.includes('Cannot connect to backend server')) {
-        return {
-          user: {
-            id: '1',
-            username: userData.username,
-            email: userData.email,
-            displayName: userData.username
-          },
-          token: 'dev-token-' + Date.now()
-        }
-      }
-      throw error
-    }
-  },
+  // Reading sessions
+  getReadingSessions: () => 
+    import('./api/sessions').then(m => m.sessionsApi.getReadingSessions()),
+  createSession: (sessionData: any) => 
+    import('./api/sessions').then(m => m.sessionsApi.createSession(sessionData)),
+  updateSession: (sessionId: string, sessionData: any) => 
+    import('./api/sessions').then(m => m.sessionsApi.updateSession(sessionId, sessionData)),
 
-  async login(credentials: { email: string; password: string }) {
-    try {
-      return this.request('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      })
-    } catch (error) {
-      // If backend is not available, provide development mode response
-      if (error instanceof Error && error.message.includes('Cannot connect to backend server')) {
-        return {
-          user: {
-            id: '1',
-            username: credentials.email.split('@')[0],
-            email: credentials.email,
-            displayName: credentials.email.split('@')[0]
-          },
-          token: 'dev-token-' + Date.now()
-        }
-      }
-      throw error
-    }
-  },
+  // Statistics
+  getStats: () => 
+    import('./api/stats').then(m => m.statsApi.getStats()),
+  getReadingStats: (period: string = 'month') => 
+    import('./api/stats').then(m => m.statsApi.getReadingStats(period)),
 
-  async verifyToken(token: string) {
-    return this.request('/', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    })
-  },
+  // Friends
+  getFriends: () => 
+    import('./api/friends').then(m => m.friendsApi.getFriends()),
+  searchFriends: (query: string) => 
+    import('./api/friends').then(m => m.friendsApi.searchFriends(query)),
+  sendFriendRequest: (friendId: string) => 
+    import('./api/friends').then(m => m.friendsApi.sendFriendRequest(friendId)),
+  acceptFriendRequest: (requestId: string) => 
+    import('./api/friends').then(m => m.friendsApi.acceptFriendRequest(requestId)),
+  rejectFriendRequest: (requestId: string) => 
+    import('./api/friends').then(m => m.friendsApi.rejectFriendRequest(requestId)),
 
-  async checkAuth() {
-    const token = localStorage.getItem('readflow_token')
-    if (!token) {
-      throw new Error('No token found')
-    }
-    
-    try {
-      return this.request('/', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-    } catch (error) {
-      // If backend is not available or returns 404, check if we have valid token format
-      if (error instanceof Error && (error.message.includes('Cannot connect to backend server') || error.message.includes('HTTP 404'))) {
-        // For development: allow access if token exists and has valid format
-        if (token.length > 10) {
-          return { valid: true, message: 'Development mode - token assumed valid' }
-        }
-      }
-      throw error
-    }
-  }
+  // Groups
+  getGroups: () => 
+    import('./api/groups').then(m => m.groupsApi.getGroups()),
+  createGroup: (groupData: any) => 
+    import('./api/groups').then(m => m.groupsApi.createGroup(groupData)),
+  joinGroup: (groupId: string) => 
+    import('./api/groups').then(m => m.groupsApi.joinGroup(groupId)),
+  leaveGroup: (groupId: string) => 
+    import('./api/groups').then(m => m.groupsApi.leaveGroup(groupId)),
+  getGroupDetails: (groupId: string) => 
+    import('./api/groups').then(m => m.groupsApi.getGroupDetails(groupId)),
+
+  // Calendar
+  getCalendarData: (year: number, month: number) => 
+    import('./api/calendar').then(m => m.calendarApi.getCalendarData(year, month)),
+  updateCalendarEntry: (date: string, data: any) => 
+    import('./api/calendar').then(m => m.calendarApi.updateCalendarEntry(date, data)),
+
+  // Challenges
+  getChallenges: () => 
+    import('./api/challenges').then(m => m.challengesApi.getChallenges()),
+  createChallenge: (challengeData: any) => 
+    import('./api/challenges').then(m => m.challengesApi.createChallenge(challengeData)),
+  updateChallengeProgress: (challengeId: string, progress: any) => 
+    import('./api/challenges').then(m => m.challengesApi.updateChallengeProgress(challengeId, progress)),
+
+  // Achievements
+  getAchievements: () => 
+    import('./api/achievements').then(m => m.achievementsApi.getAchievements()),
+  unlockAchievement: (achievementId: string) => 
+    import('./api/achievements').then(m => m.achievementsApi.unlockAchievement(achievementId)),
+
+  // Settings
+  getSettings: () => 
+    import('./api/settings').then(m => m.settingsApi.getSettings()),
+  updateSettings: (settingsData: any) => 
+    import('./api/settings').then(m => m.settingsApi.updateSettings(settingsData)),
+  updatePassword: (passwordData: { currentPassword: string; newPassword: string }) => 
+    import('./api/settings').then(m => m.settingsApi.updatePassword(passwordData))
 }

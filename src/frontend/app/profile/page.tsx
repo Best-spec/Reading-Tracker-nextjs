@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { User, BookOpen, Clock, Flame, Trophy, Calendar, Award, Target, Edit2, Camera, Mail, MapPin, Link as LinkIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { api } from '@/lib/api'
 
 interface UserProfile {
   id: string
@@ -93,96 +94,115 @@ export default function ProfilePage() {
 
       const currentUser = JSON.parse(userData)
       
-      // Create profile data from current user
-      const userProfile: UserProfile = {
-        id: currentUser.id || '1',
-        username: currentUser.username || 'user',
-        email: currentUser.email || 'user@example.com',
-        displayName: currentUser.displayName || currentUser.username || 'User',
-        bio: currentUser.bio || 'Passionate reader exploring new worlds through books.',
-        avatar: currentUser.avatar || `https://via.placeholder.com/150x150?text=${currentUser.username?.charAt(0).toUpperCase() || 'U'}`,
-        location: currentUser.location || '',
-        website: currentUser.website || '',
-        joinDate: currentUser.joinDate || new Date().toISOString().split('T')[0],
-        isPublic: currentUser.isPublic !== false // Default to true
+      try {
+        // Try to get real profile data from API
+        const profileData = await api.getProfile()
+        const statsData = await api.getStats()
+        
+        setUser(profileData)
+        setStats(statsData)
+      } catch (error) {
+        console.error('Failed to load from API, using fallback:', error)
+        
+        // Fallback to localStorage data if API fails
+        const userProfile: UserProfile = {
+          id: currentUser.id || '1',
+          username: currentUser.username || 'user',
+          email: currentUser.email || 'user@example.com',
+          displayName: currentUser.displayName || currentUser.username || 'User',
+          bio: currentUser.bio || 'Passionate reader exploring new worlds through books.',
+          avatar: currentUser.avatar || `https://via.placeholder.com/150x150?text=${currentUser.username?.charAt(0).toUpperCase() || 'U'}`,
+          location: currentUser.location || '',
+          website: currentUser.website || '',
+          joinDate: currentUser.joinDate || new Date().toISOString().split('T')[0],
+          isPublic: currentUser.isPublic !== false
+        }
+
+        // Generate stats based on user data or use defaults
+        const userStats: ReadingStats = {
+          totalBooks: currentUser.totalBooks || 12,
+          totalPages: currentUser.totalPages || 3456,
+          totalHours: currentUser.totalHours || 24.5,
+          currentStreak: currentUser.currentStreak || 7,
+          longestStreak: currentUser.longestStreak || 15,
+          favoriteGenre: currentUser.favoriteGenre || 'Fiction',
+          averageRating: currentUser.averageRating || 4.2
+        }
+
+        setUser(userProfile)
+        setStats(userStats)
       }
 
-      // Generate stats based on user data or use defaults
-      const userStats: ReadingStats = {
-        totalBooks: currentUser.totalBooks || 12,
-        totalPages: currentUser.totalPages || 3456,
-        totalHours: currentUser.totalHours || 24.5,
-        currentStreak: currentUser.currentStreak || 7,
-        longestStreak: currentUser.longestStreak || 15,
-        favoriteGenre: currentUser.favoriteGenre || 'Fiction',
-        averageRating: currentUser.averageRating || 4.2
+      // Load recent books and achievements (these would also come from API)
+      try {
+        const booksData = await api.getBooks()
+        const recentBooksData = booksData.slice(0, 3).map((book: any) => ({
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          coverUrl: book.coverUrl,
+          status: book.status,
+          rating: book.rating,
+          finishedDate: book.finishedDate,
+          pagesRead: book.pagesRead || 0,
+          totalPages: book.totalPages
+        }))
+        setRecentBooks(recentBooksData)
+      } catch (error) {
+        console.error('Failed to load books:', error)
+        // Use mock data as fallback
+        const mockRecentBooks: RecentBook[] = [
+          {
+            id: '1',
+            title: 'The Great Gatsby',
+            author: 'F. Scott Fitzgerald',
+            coverUrl: 'https://via.placeholder.com/60x90?text=GG',
+            status: 'FINISHED',
+            rating: 5,
+            finishedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            pagesRead: 180,
+            totalPages: 180
+          },
+          {
+            id: '2',
+            title: 'To Kill a Mockingbird',
+            author: 'Harper Lee',
+            coverUrl: 'https://via.placeholder.com/60x90?text=TKAM',
+            status: 'READING',
+            pagesRead: 85,
+            totalPages: 324
+          }
+        ]
+        setRecentBooks(mockRecentBooks)
       }
 
-      // Mock recent books (would come from API)
-      const mockRecentBooks: RecentBook[] = [
-        {
-          id: '1',
-          title: 'The Great Gatsby',
-          author: 'F. Scott Fitzgerald',
-          coverUrl: 'https://via.placeholder.com/60x90?text=GG',
-          status: 'FINISHED',
-          rating: 5,
-          finishedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          pagesRead: 180,
-          totalPages: 180
-        },
-        {
-          id: '2',
-          title: 'To Kill a Mockingbird',
-          author: 'Harper Lee',
-          coverUrl: 'https://via.placeholder.com/60x90?text=TKAM',
-          status: 'READING',
-          pagesRead: 85,
-          totalPages: 324
-        },
-        {
-          id: '3',
-          title: '1984',
-          author: 'George Orwell',
-          coverUrl: 'https://via.placeholder.com/60x90?text=1984',
-          status: 'TO_READ',
-          pagesRead: 0,
-          totalPages: 328
-        }
-      ]
+      try {
+        const achievementsData = await api.getAchievements()
+        setAchievements(achievementsData)
+      } catch (error) {
+        console.error('Failed to load achievements:', error)
+        // Use mock data as fallback
+        const mockAchievements: Achievement[] = [
+          {
+            id: '1',
+            title: 'First Book',
+            description: 'Completed your first book',
+            icon: '📚',
+            earnedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            category: 'Milestone'
+          },
+          {
+            id: '2',
+            title: 'Week Warrior',
+            description: 'Read for 7 consecutive days',
+            icon: '🔥',
+            earnedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            category: 'Streak'
+          }
+        ]
+        setAchievements(mockAchievements)
+      }
 
-      // Mock achievements (would come from API)
-      const mockAchievements: Achievement[] = [
-        {
-          id: '1',
-          title: 'First Book',
-          description: 'Completed your first book',
-          icon: '📚',
-          earnedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          category: 'Milestone'
-        },
-        {
-          id: '2',
-          title: 'Week Warrior',
-          description: 'Read for 7 consecutive days',
-          icon: '🔥',
-          earnedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          category: 'Streak'
-        },
-        {
-          id: '3',
-          title: 'Page Turner',
-          description: 'Read 1000 pages',
-          icon: '�',
-          earnedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          category: 'Volume'
-        }
-      ]
-
-      setUser(userProfile)
-      setStats(userStats)
-      setRecentBooks(mockRecentBooks)
-      setAchievements(mockAchievements)
     } catch (error) {
       console.error('Failed to load profile data:', error)
       router.push('/login')
@@ -204,8 +224,8 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     try {
-      // Mock API call - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Try to update profile via API
+      await api.updateProfile(editForm)
       
       if (user) {
         // Update user profile data
@@ -216,17 +236,21 @@ export default function ProfilePage() {
         
         // Update the user state
         setUser(updatedUser)
-        
-        // Also update the current user data in the global storage
-        const currentProfile = JSON.parse(localStorage.getItem('readflow_profile') || '{}')
-        const mergedProfile = { ...currentProfile, ...editForm }
-        localStorage.setItem('readflow_profile', JSON.stringify(mergedProfile))
       }
       
       setIsEditing(false)
       setEditForm({})
     } catch (error) {
       console.error('Failed to update profile:', error)
+      
+      // Fallback: just update localStorage if API fails
+      if (user) {
+        const updatedUser = { ...user, ...editForm }
+        localStorage.setItem('readflow_profile', JSON.stringify(updatedUser))
+        setUser(updatedUser)
+        setIsEditing(false)
+        setEditForm({})
+      }
     }
   }
 
