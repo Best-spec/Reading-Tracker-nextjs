@@ -3,7 +3,6 @@ const API_BASE_URL = 'http://127.0.0.1:5000'
 export async function request(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`
   const token = localStorage.getItem('readflow_token')
-  
   try {
     console.log(`Making request to: ${url}`)
     

@@ -35,6 +35,11 @@ model Book {
   coverUrl    String?
   isbn        String?      @unique
   metadata    Json?        // ใช้ JSONB เก็บข้อมูลยิบย่อย (เฉพาะ Postgres)
+  status      String?      // สถานะการอ่าน (READING, FINISHED, PLAN)
+  currentPage Int?         // หน้าปัจจุบันที่อ่าน
+  rating      Int?         // คะแนนจาก 1-5
+  genre       String?
+  addedAt     DateTime     @default(now())
   
   // Relations
   readingLogs ReadingLog[]

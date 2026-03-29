@@ -12,7 +12,7 @@ export class BookController {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      const { title, author, totalPages, coverUrl, isbn, metadata } = req.body;
+      const { title, author, totalPages, coverUrl, isbn, metadata, status, currentPage, rating, genre } = req.body;
 
       if (!title || !author || !totalPages) {
         return res.status(400).json({ error: 'Title, author, and totalPages are required' });
@@ -25,6 +25,10 @@ export class BookController {
         coverUrl,
         isbn,
         metadata,
+        status,
+        currentPage,
+        rating,
+        genre,
       });
 
       res.status(201).json(book);

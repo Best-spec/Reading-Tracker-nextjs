@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { User, BookOpen, Clock, Flame, Trophy, Calendar, Award, Target, Edit2, Camera, Mail, MapPin, Link as LinkIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { api } from '@/lib/api'
+import { api } from '@/service/api'
 
 interface UserProfile {
   id: string

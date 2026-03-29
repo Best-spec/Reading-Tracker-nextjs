@@ -1,17 +1,11 @@
 import { Book, ReadingLog, Status } from '@prisma/client';
 import { prisma } from '../prisma.js';
+import { CreateBookInput } from '../types/booktype.js';
 
 const prismaClient = prisma;
 
 export class BookService {
-  async createBook(userId: string, bookData: {
-    title: string;
-    author: string;
-    totalPages: number;
-    coverUrl?: string;
-    isbn?: string;
-    metadata?: any;
-  }): Promise<Book> {
+  async createBook(userId: string, bookData: CreateBookInput) { 
     return await prismaClient.book.create({
       data: {
         ...bookData,

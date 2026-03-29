@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Library, Clock, BookOpen, Flame, TrendingUp, BookX, PlayCircle, PlusCircle, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { api } from '@/lib/api'
+import { api } from '@/service/api'
 
 interface Book {
   id: string
