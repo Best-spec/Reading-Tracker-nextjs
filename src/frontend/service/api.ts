@@ -1,3 +1,6 @@
+import { LoginCredentials, RegisterData } from '@/types/auth'
+import { UpdatePasswordData } from '@/types/settings'
+
 // Export all feature-based API modules
 export { authApi } from './api/auth'
 export { userApi } from './api/user'
@@ -17,9 +20,9 @@ export { request } from './api/base'
 // Legacy export for backward compatibility
 export const api = {
   // Authentication
-  register: (userData: { email: string; username: string; password: string }) => 
+  register: (userData: RegisterData) => 
     import('./api/auth').then(m => m.authApi.register(userData)),
-  login: (credentials: { email: string; password: string }) => 
+  login: (credentials: LoginCredentials) => 
     import('./api/auth').then(m => m.authApi.login(credentials)),
   verifyToken: (token: string) => 
     import('./api/auth').then(m => m.authApi.verifyToken(token)),
@@ -41,14 +44,20 @@ export const api = {
     import('./api/books').then(m => m.booksApi.updateBook(bookId, bookData)),
   deleteBook: (bookId: string) => 
     import('./api/books').then(m => m.booksApi.deleteBook(bookId)),
+  updateProgress: (bookId: string, currentPage: number, status?: string) => 
+    import('./api/books').then(m => m.booksApi.updateProgress(bookId, currentPage, status)),
+  addBookSection: (bookId: string, sectionData: any) => 
+    import('./api/books').then(m => m.booksApi.addBookSection(bookId, sectionData)),
 
   // Reading sessions
   getReadingSessions: () => 
     import('./api/sessions').then(m => m.sessionsApi.getReadingSessions()),
-  createSession: (sessionData: any) => 
-    import('./api/sessions').then(m => m.sessionsApi.createSession(sessionData)),
-  updateSession: (sessionId: string, sessionData: any) => 
-    import('./api/sessions').then(m => m.sessionsApi.updateSession(sessionId, sessionData)),
+  getActiveSession: () => 
+    import('./api/sessions').then(m => m.sessionsApi.getActiveSession()),
+  startSession: (sessionData: { bookId: string, section?: string }) => 
+    import('./api/sessions').then(m => m.sessionsApi.startSession(sessionData)),
+  stopSession: (sessionData: { sessionId: string; pagesRead: number }) => 
+    import('./api/sessions').then(m => m.sessionsApi.stopSession(sessionData)),
 
   // Statistics
   getStats: () => 
@@ -67,6 +76,8 @@ export const api = {
     import('./api/friends').then(m => m.friendsApi.acceptFriendRequest(requestId)),
   rejectFriendRequest: (requestId: string) => 
     import('./api/friends').then(m => m.friendsApi.rejectFriendRequest(requestId)),
+  getFriendActivity: () => 
+    import('./api/friends').then(m => m.friendsApi.getActivity()),
 
   // Groups
   getGroups: () => 
@@ -105,6 +116,6 @@ export const api = {
     import('./api/settings').then(m => m.settingsApi.getSettings()),
   updateSettings: (settingsData: any) => 
     import('./api/settings').then(m => m.settingsApi.updateSettings(settingsData)),
-  updatePassword: (passwordData: { currentPassword: string; newPassword: string }) => 
+  updatePassword: (passwordData: UpdatePasswordData) => 
     import('./api/settings').then(m => m.settingsApi.updatePassword(passwordData))
 }

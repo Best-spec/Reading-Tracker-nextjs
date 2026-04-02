@@ -66,7 +66,9 @@ export class ReadingSessionService {
 
       const endTime = new Date();
       const startTime = new Date(session.startTime);
-      const minutesRead = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+      const diffMs = endTime.getTime() - startTime.getTime();
+      const durationSeconds = Math.floor(diffMs / 1000);
+      const minutesRead = Math.ceil(durationSeconds / 60);
 
       // อัพเดต session
       const updatedSession = await prisma.readingSession.update({
@@ -74,6 +76,7 @@ export class ReadingSessionService {
         data: {
           endTime,
           minutesRead,
+          durationSeconds,
           pagesRead
         }
       });

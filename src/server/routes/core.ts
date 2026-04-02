@@ -6,6 +6,9 @@ import friendRoutes from './friendRoutes.js';
 import groupRoutes from './groupRoutes.js';
 import readingRoutes from './readingRoutes.js';
 import onlineStatusRoutes from './onlineStatus.js';
+import userRoutes from './userRoutes.js';
+import statsRoutes from './statsRoutes.js';
+import achievementRoutes from './achievementRoutes.js';
 
 const router = express.Router();
 
@@ -16,5 +19,8 @@ router.use('/books', bookRoutes);
 router.use('/groups', groupRoutes);
 router.use('/reading-sessions', readingRoutes);
 router.use('/online-status', onlineStatusRoutes);
+router.use('/user', userRoutes);
+router.use('/stats', statsRoutes);
+router.use('/achievements', achievementRoutes);
 
 export default router;

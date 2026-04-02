@@ -1,7 +1,8 @@
 import { request } from './base'
+import { RegisterData, LoginCredentials, AuthResponse } from '@/types/auth'
 
 export const authApi = {
-  async register(userData: { email: string; username: string; password: string }) {
+  async register(userData: RegisterData): Promise<AuthResponse> {
     try {
       return await request('/api/auth/register', {
         method: 'POST',
@@ -24,7 +25,7 @@ export const authApi = {
     }
   },
 
-  async login(credentials: { email: string; password: string }) {
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
       return await request('/api/auth/login', {
         method: 'POST',

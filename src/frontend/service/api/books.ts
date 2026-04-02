@@ -24,5 +24,19 @@ export const booksApi = {
     return await request(`/api/books/${bookId}`, {
       method: 'DELETE',
     })
+  },
+
+  async updateProgress(bookId: string, currentPage: number, status?: string) {
+    return await request(`/api/books/${bookId}/progress`, {
+      method: 'POST',
+      body: JSON.stringify({ currentPage, status }),
+    })
+  },
+
+  async addBookSection(bookId: string, sectionData: { title: string; startPage: number; endPage: number; content?: string; notes?: string }) {
+    return await request(`/api/books/${bookId}/sections`, {
+      method: 'POST',
+      body: JSON.stringify(sectionData),
+    })
   }
 }

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { booksApi } from '@/service/api'
-import { Book, BookFilter, BookFormData } from '@/types/book'
+import { Book, BookFilter, BookFormData, BookHook } from '@/types/book'
 
-export function useBooks() {
+export function useBooks(): BookHook {
   const [books, setBooks] = useState<Book[]>([])
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([])
   const [loading, setLoading] = useState(true)

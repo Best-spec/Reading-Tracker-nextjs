@@ -15,6 +15,12 @@ model User {
   email         String         @unique
   password      String
   avatar        String?
+  displayName   String?
+  bio           String?
+  location      String?
+  website       String?
+  status        String         @default("ONLINE")
+  isPublic      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   
   // Relations
@@ -64,13 +70,14 @@ model ReadingLog {
 
 // ตารางบันทึกเวลาการอ่านแต่ละ session
 model ReadingSession {
-  id            String   @id @default(uuid())
-  readingLogId  String
-  startTime     DateTime @default(now())
-  endTime       DateTime?
-  minutesRead   Int?     // จำนวนนาทีที่อ่าน (คำนวณจาก startTime - endTime)
-  pagesRead     Int?     // จำนวนหน้าที่อ่านใน session นี้
-  section       String?  // section ที่อ่าน (บท/ตอน)
+  id              String   @id @default(uuid())
+  readingLogId    String
+  startTime       DateTime @default(now())
+  endTime         DateTime?
+  minutesRead     Int?     // จำนวนนาทีที่อ่าน (คำนวณจาก startTime - endTime)
+  durationSeconds Int?     // จำนวนวินาทีที่อ่านจริง (เพื่อความแม่นยำสูงสุด)
+  pagesRead       Int?     // จำนวนหน้าที่อ่านใน session นี้
+  section         String?  // section ที่อ่าน (บท/ตอน)
 
   readingLog    ReadingLog @relation(fields: [readingLogId], references: [id], onDelete: Cascade)
 }

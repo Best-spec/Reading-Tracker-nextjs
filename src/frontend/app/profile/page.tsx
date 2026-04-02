@@ -17,6 +17,7 @@ interface UserProfile {
   website?: string
   joinDate: string
   isPublic: boolean
+  status?: string
 }
 
 interface ReadingStats {
@@ -83,55 +84,24 @@ export default function ProfilePage() {
 
   const loadProfileData = async () => {
     try {
-      // Get current user data from localStorage
-      const userData = localStorage.getItem('readflow_profile')
       const token = localStorage.getItem('readflow_token')
       
-      if (!userData || !token) {
+      if (!token) {
         router.push('/login')
         return
       }
 
-      const currentUser = JSON.parse(userData)
+      // Try to get real profile data from API
+      const profileData = await api.getProfile()
+      const statsData = await api.getStats()
       
-      try {
-        // Try to get real profile data from API
-        const profileData = await api.getProfile()
-        const statsData = await api.getStats()
-        
-        setUser(profileData)
-        setStats(statsData)
-      } catch (error) {
-        console.error('Failed to load from API, using fallback:', error)
-        
-        // Fallback to localStorage data if API fails
-        const userProfile: UserProfile = {
-          id: currentUser.id || '1',
-          username: currentUser.username || 'user',
-          email: currentUser.email || 'user@example.com',
-          displayName: currentUser.displayName || currentUser.username || 'User',
-          bio: currentUser.bio || 'Passionate reader exploring new worlds through books.',
-          avatar: currentUser.avatar || `https://via.placeholder.com/150x150?text=${currentUser.username?.charAt(0).toUpperCase() || 'U'}`,
-          location: currentUser.location || '',
-          website: currentUser.website || '',
-          joinDate: currentUser.joinDate || new Date().toISOString().split('T')[0],
-          isPublic: currentUser.isPublic !== false
-        }
-
-        // Generate stats based on user data or use defaults
-        const userStats: ReadingStats = {
-          totalBooks: currentUser.totalBooks || 12,
-          totalPages: currentUser.totalPages || 3456,
-          totalHours: currentUser.totalHours || 24.5,
-          currentStreak: currentUser.currentStreak || 7,
-          longestStreak: currentUser.longestStreak || 15,
-          favoriteGenre: currentUser.favoriteGenre || 'Fiction',
-          averageRating: currentUser.averageRating || 4.2
-        }
-
-        setUser(userProfile)
-        setStats(userStats)
-      }
+      setUser({
+        ...profileData,
+        displayName: profileData.displayName || profileData.username,
+        bio: profileData.bio || 'Passionate reader exploring new worlds through books.',
+        avatar: profileData.avatar || `https://via.placeholder.com/150x150?text=${profileData.username?.charAt(0).toUpperCase() || 'U'}`,
+      })
+      setStats(statsData)
 
       // Load recent books and achievements (these would also come from API)
       try {
@@ -216,7 +186,8 @@ export default function ProfilePage() {
         bio: user.bio,
         location: user.location,
         website: user.website,
-        isPublic: user.isPublic
+        isPublic: user.isPublic,
+        status: user.status || 'ONLINE'
       })
     }
     setIsEditing(true)
@@ -224,33 +195,19 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     try {
-      // Try to update profile via API
-      await api.updateProfile(editForm)
+      // Update profile via API
+      const updatedData = await api.updateProfile(editForm)
       
       if (user) {
-        // Update user profile data
-        const updatedUser = { ...user, ...editForm }
-        
-        // Update localStorage with new profile data
-        localStorage.setItem('readflow_profile', JSON.stringify(updatedUser))
-        
-        // Update the user state
-        setUser(updatedUser)
+        // Update the user state with returned data combining with old user just in case
+        setUser({ ...user, ...updatedData })
       }
       
       setIsEditing(false)
       setEditForm({})
     } catch (error) {
       console.error('Failed to update profile:', error)
-      
-      // Fallback: just update localStorage if API fails
-      if (user) {
-        const updatedUser = { ...user, ...editForm }
-        localStorage.setItem('readflow_profile', JSON.stringify(updatedUser))
-        setUser(updatedUser)
-        setIsEditing(false)
-        setEditForm({})
-      }
+      alert("Failed to update profile")
     }
   }
 
@@ -310,6 +267,9 @@ export default function ProfilePage() {
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mt-4">{user.displayName}</h1>
             <p className="text-gray-500">@{user.username}</p>
+            <span className={`mt-2 px-3 py-1 text-xs font-medium rounded-full ${user.status === 'OFFLINE' ? 'bg-gray-100 text-gray-600' : user.status === 'DO_NOT_DISTURB' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+              {user.status === 'OFFLINE' ? 'Offline' : user.status === 'DO_NOT_DISTURB' ? 'Do Not Disturb' : 'Online'}
+            </span>
             <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
               <Calendar className="w-4 h-4" />
               <span>Joined {formatDate(user.joinDate)}</span>
@@ -356,6 +316,18 @@ export default function ProfilePage() {
                       onChange={(e) => setEditForm(prev => ({ ...prev, website: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select
+                      value={editForm.status || 'ONLINE'}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="ONLINE">Online</option>
+                      <option value="DO_NOT_DISTURB">Do Not Disturb</option>
+                      <option value="OFFLINE">Offline</option>
+                    </select>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -458,8 +430,8 @@ export default function ProfilePage() {
                       <h4 className="font-medium text-gray-900">{book.title}</h4>
                       <p className="text-sm text-gray-600">{book.author}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(book.status)}`}>
-                          {book.status.replace('_', ' ')}
+                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(book.status || '')}`}>
+                          {(book.status || 'PLAN').replace('_', ' ')}
                         </span>
                         {book.rating && (
                           <div className="flex items-center gap-1">

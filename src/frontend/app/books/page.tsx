@@ -1,14 +1,21 @@
 'use client'
 
+import { useState } from 'react'
 import { Plus } from 'lucide-react'
+import { api } from '@/service/api'
 import { useBooks } from '@/hooks/useBooks'
 import { useBookModal } from '@/hooks/useBookModal'
 import BookModal from '@/components/books/BookModal'
+import UpdateProgressModal from '@/components/books/UpdateProgressModal'
 import BookFilters from '@/components/books/BookFilters'
 import BookGrid from '@/components/books/BookGrid'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { Book } from '@/types/book'
 
 export default function BooksPage() {
+  const [progressModalOpen, setProgressModalOpen] = useState(false)
+  const [selectedBookForProgress, setSelectedBookForProgress] = useState<Book | null>(null)
+
   const {
     books,
     filteredBooks,
@@ -19,7 +26,8 @@ export default function BooksPage() {
     setActiveFilter,
     addBook,
     updateBook,
-    deleteBook
+    deleteBook,
+    loadBooks
   } = useBooks()
 
   const {
@@ -63,6 +71,24 @@ export default function BooksPage() {
     }
   }
 
+  const handleUpdateProgressSubmit = async (currentPage: number, status: string) => {
+    if (!selectedBookForProgress) return
+    
+    try {
+      await api.updateProgress(selectedBookForProgress.id, currentPage, status)
+      await loadBooks()
+    } catch(err) {
+      console.error(err)
+      alert("Failed to update progress")
+      throw err // Let modal know
+    }
+  }
+
+  const openProgressModal = (book: any) => {
+    setSelectedBookForProgress(book)
+    setProgressModalOpen(true)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -102,6 +128,7 @@ export default function BooksPage() {
         onEditBook={openEditBookModal}
         onDeleteBook={handleDeleteBook}
         onAddBook={openAddBookModal}
+        onUpdateProgress={openProgressModal}
       />
 
       {/* Add/Edit Book Modal */}
@@ -112,6 +139,14 @@ export default function BooksPage() {
         onClose={closeModal}
         onSubmit={handleSubmit}
         onFormDataChange={updateFormData}
+      />
+
+      {/* Update Progress Modal */}
+      <UpdateProgressModal
+        showModal={progressModalOpen}
+        book={selectedBookForProgress}
+        onClose={() => setProgressModalOpen(false)}
+        onSubmit={handleUpdateProgressSubmit}
       />
     </div>
   )

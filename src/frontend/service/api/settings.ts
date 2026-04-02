@@ -1,4 +1,5 @@
 import { request } from './base'
+import { UpdatePasswordData } from '@/types/settings'
 
 export const settingsApi = {
   async getSettings() {
@@ -12,7 +13,7 @@ export const settingsApi = {
     })
   },
 
-  async updatePassword(passwordData: { currentPassword: string; newPassword: string }) {
+  async updatePassword(passwordData: UpdatePasswordData) {
     return await request('/api/settings/password', {
       method: 'PUT',
       body: JSON.stringify(passwordData),

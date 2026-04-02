@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Book, BookFormData } from '@/types/book'
+import { Book, BookFormData, BookModalHook } from '@/types/book'
 
-export function useBookModal() {
+export function useBookModal(): BookModalHook {
   const [showModal, setShowModal] = useState(false)
   const [editingBook, setEditingBook] = useState<Book | null>(null)
   const [formData, setFormData] = useState<BookFormData>({

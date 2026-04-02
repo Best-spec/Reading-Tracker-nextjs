@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { api } from '@/service/api'
 
 interface MenuItem {
   icon: any
@@ -52,12 +53,19 @@ export default function Layout({ children }: LayoutProps) {
   ]
 
   useEffect(() => {
-    const userData = localStorage.getItem('readflow_profile')
-    if (userData) {
-      const parsedUser = JSON.parse(userData)
-      setUser(parsedUser)
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem('readflow_token')
+        if (token) {
+          const profileData = await api.getProfile()
+          setUser(profileData)
+        }
+      } catch (error) {
+        console.error('Failed to load user profile in sidebar', error)
+      }
     }
-  }, [])
+    fetchUser()
+  }, [pathname])
 
   const handleLogout = () => {
     localStorage.removeItem('readflow_token')
@@ -65,8 +73,8 @@ export default function Layout({ children }: LayoutProps) {
     router.push('/login')
   }
 
-  // Don't show layout on login/register pages
-  if (pathname === '/login' || pathname === '/register') {
+  // Don't show layout on auth pages
+  if (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password') {
     return <>{children}</>
   }
 
@@ -186,7 +194,10 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
                 <div className="hidden lg:block">
                   <p className="text-sm font-medium text-gray-900">{user?.displayName || user?.username || 'User'}</p>
-                  <p className="text-xs text-gray-500">Online</p>
+                  <div className="flex items-center gap-1">
+                    <span className={`w-2 h-2 rounded-full ${user?.status === 'OFFLINE' ? 'bg-gray-400' : user?.status === 'DO_NOT_DISTURB' ? 'bg-red-500' : 'bg-green-500'}`}></span>
+                    <p className="text-xs text-gray-500">{user?.status === 'OFFLINE' ? 'Offline' : user?.status === 'DO_NOT_DISTURB' ? 'Do Not Disturb' : 'Online'}</p>
+                  </div>
                 </div>
               </div>
             </div>

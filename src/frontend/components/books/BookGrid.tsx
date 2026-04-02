@@ -6,13 +6,15 @@ interface BookGridProps {
   onEditBook: (book: Book) => void
   onDeleteBook: (bookId: string) => void
   onAddBook: () => void
+  onUpdateProgress: (book: Book) => void
 }
 
 export default function BookGrid({
   books,
   onEditBook,
   onDeleteBook,
-  onAddBook
+  onAddBook,
+  onUpdateProgress
 }: BookGridProps) {
   const getStatusIcon = (status: Book['status']) => {
     switch (status) {
@@ -76,9 +78,14 @@ export default function BookGrid({
 
               {book.status === 'READING' && book.totalPages && (
                 <div className="mb-3">
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Progress</span>
-                    <span>{book.currentPage || 0} / {book.totalPages}</span>
+                  <div className="flex justify-between items-center text-xs text-gray-500 mb-1">
+                    <span>Progress: {book.currentPage || 0} / {book.totalPages}</span>
+                    <button 
+                      onClick={() => onUpdateProgress(book)}
+                      className="text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                    >
+                      <BookOpen className="w-3 h-3" /> Update
+                    </button>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div 
@@ -86,19 +93,6 @@ export default function BookGrid({
                       style={{ width: `${Math.round(((book.currentPage || 0) / book.totalPages) * 100)}%` }}
                     ></div>
                   </div>
-                </div>
-              )}
-
-              {book.rating && (
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`w-4 h-4 ${i < book.rating! ? 'text-yellow-400' : 'text-gray-300'}`}
-                    >
-                      ★
-                    </div>
-                  ))}
                 </div>
               )}
 
@@ -112,7 +106,7 @@ export default function BookGrid({
                 </button>
                 <button
                   onClick={() => onDeleteBook(book.id)}
-                  className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>

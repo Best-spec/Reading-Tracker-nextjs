@@ -52,7 +52,8 @@ export class BookService {
   }
 
   async updateReadingProgress(userId: string, bookId: string, currentPage: number, status?: Status): Promise<ReadingLog> {
-    return await prismaClient.readingLog.upsert({
+    // Update the ReadingLog
+    const readingLog = await prismaClient.readingLog.upsert({
       where: {
         userId_bookId: {
           userId,
@@ -71,6 +72,17 @@ export class BookService {
         status: status || 'READING',
       },
     });
+
+    // Also sync the currentPage and status to the main Book model
+    await prismaClient.book.update({
+      where: { id: bookId },
+      data: {
+        currentPage,
+        status: status || 'READING',
+      }
+    });
+
+    return readingLog;
   }
 
   async getReadingProgress(userId: string, bookId: string): Promise<ReadingLog | null> {
