@@ -10,23 +10,37 @@ export const friendsApi = {
     return await request(`/api/friends/search?q=${encodeURIComponent(query)}`)
   },
 
-  async sendFriendRequest(friendId: string) {
+  async sendFriendRequest(followingId: string) {
     return await request('/api/friends/request', {
       method: 'POST',
-      body: JSON.stringify({ friendId }),
+      body: JSON.stringify({ followingId }),
     })
   },
 
-  async acceptFriendRequest(requestId: string) {
-    return await request(`/api/friends/requests/${requestId}/accept`, {
-      method: 'POST',
+  async acceptFriendRequest(followerId: string) {
+    return await request(`/api/friends/accept/${followerId}`, {
+      method: 'PUT',
     })
   },
 
-  async rejectFriendRequest(requestId: string) {
-    return await request(`/api/friends/requests/${requestId}/reject`, {
-      method: 'POST',
+  async rejectFriendRequest(followerId: string) {
+    return await request(`/api/friends/reject/${followerId}`, {
+      method: 'PUT',
     })
+  },
+ 
+  async getPendingRequests() {
+    return await request('/api/friends/pending')
+  },
+ 
+  async removeFriend(friendId: string) {
+    return await request(`/api/friends/${friendId}`, {
+      method: 'DELETE',
+    })
+  },
+ 
+  async getFriendStats(friendId: string) {
+    return await request(`/api/friends/${friendId}/stats`)
   },
 
   async getActivity(): Promise<FriendActivity[]> {

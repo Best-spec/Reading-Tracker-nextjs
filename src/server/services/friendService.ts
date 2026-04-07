@@ -31,26 +31,28 @@ export class FriendService {
           select: {
             id: true,
             username: true,
-            avatar: true
+            avatar: true,
+            status: true
           }
         },
         following: {
           select: {
             id: true,
             username: true,
-            avatar: true
+            avatar: true,
+            status: true
           }
         }
       }
     });
   }
 
-  async acceptFriendRequest(followerId: string, followingId: string) {
+  async acceptFriendRequest(requesterId: string, currentUserId: string) {
     const followRequest = await prisma.follows.findUnique({
       where: {
         followerId_followingId: {
-          followerId,
-          followingId
+          followerId: requesterId,
+          followingId: currentUserId
         }
       }
     });
@@ -60,14 +62,14 @@ export class FriendService {
     }
 
     if (followRequest.status !== FriendStatus.PENDING) {
-      throw new Error('Friend request is not pending');
+      throw new Error('Friend request is already ' + followRequest.status);
     }
 
     return await prisma.follows.update({
       where: {
         followerId_followingId: {
-          followerId,
-          followingId
+          followerId: requesterId,
+          followingId: currentUserId
         }
       },
       data: {
@@ -78,26 +80,28 @@ export class FriendService {
           select: {
             id: true,
             username: true,
-            avatar: true
+            avatar: true,
+            status: true
           }
         },
         following: {
           select: {
             id: true,
             username: true,
-            avatar: true
+            avatar: true,
+            status: true
           }
         }
       }
     });
   }
 
-  async rejectFriendRequest(followerId: string, followingId: string) {
+  async rejectFriendRequest(requesterId: string, currentUserId: string) {
     const followRequest = await prisma.follows.findUnique({
       where: {
         followerId_followingId: {
-          followerId,
-          followingId
+          followerId: requesterId,
+          followingId: currentUserId
         }
       }
     });
@@ -106,30 +110,24 @@ export class FriendService {
       throw new Error('Friend request not found');
     }
 
-    if (followRequest.status !== FriendStatus.PENDING) {
-      throw new Error('Friend request is not pending');
-    }
-
-    return await prisma.follows.update({
+    return await prisma.follows.delete({
       where: {
         followerId_followingId: {
-          followerId,
-          followingId
+          followerId: requesterId,
+          followingId: currentUserId
         }
-      },
-      data: {
-        status: FriendStatus.REJECTED
       }
     });
   }
 
-  async removeFriend(followerId: string, followingId: string) {
-    const followRecord = await prisma.follows.findUnique({
+  async removeFriend(userId1: string, userId2: string) {
+    // Check both directions
+    const followRecord = await prisma.follows.findFirst({
       where: {
-        followerId_followingId: {
-          followerId,
-          followingId
-        }
+        OR: [
+          { followerId: userId1, followingId: userId2 },
+          { followerId: userId2, followingId: userId1 }
+        ]
       }
     });
 
@@ -140,8 +138,8 @@ export class FriendService {
     await prisma.follows.delete({
       where: {
         followerId_followingId: {
-          followerId,
-          followingId
+          followerId: followRecord.followerId,
+          followingId: followRecord.followingId
         }
       }
     });
@@ -168,30 +166,31 @@ export class FriendService {
           select: {
             id: true,
             username: true,
-            avatar: true
+            avatar: true,
+            status: true
           }
         },
         following: {
           select: {
             id: true,
             username: true,
-            avatar: true
+            avatar: true,
+            status: true
           }
         }
       }
     });
 
-    return friends.map(friend => {
-      if (friend.followerId === userId) {
-        return friend.following;
-      } else {
-        return friend.follower;
-      }
-    });
+    const uniqueFriends = Array.from(new Map(friends.map(friend => {
+      const friendData = friend.followerId === userId ? friend.following : friend.follower;
+      return [friendData.id, friendData];
+    })).values());
+
+    return uniqueFriends;
   }
 
   async getPendingRequests(userId: string) {
-    return await prisma.follows.findMany({
+    const requests = await prisma.follows.findMany({
       where: {
         followingId: userId,
         status: FriendStatus.PENDING
@@ -201,42 +200,56 @@ export class FriendService {
           select: {
             id: true,
             username: true,
-            avatar: true
+            avatar: true,
+            email: true
           }
         }
       }
     });
+
+    return requests.map(req => ({
+      id: req.followerId + '_' + req.followingId, // Composite ID for frontend
+      from: req.follower,
+      createdAt: new Date().toISOString() // Or use createdAt from DB if available
+    }));
   }
 
   async getOnlineFriends(userId: string) {
     const friends = await this.getFriends(userId);
-    
-    return friends.filter(friend => {
-      return true;
-    });
+    return friends.filter(friend => friend.status === 'ONLINE');
   }
 
   async getFriendReadingStats(friendId: string) {
-    const stats = await prisma.readingLog.findMany({
-      where: {
-        userId: friendId
-      },
+    const logs = await prisma.readingLog.findMany({
+      where: { userId: friendId },
       include: {
-        book: true
+        book: true,
+        sessions: true
       }
     });
 
-    const totalBooks = stats.length;
-    const finishedBooks = stats.filter(log => log.status === 'FINISHED').length;
-    const currentlyReading = stats.filter(log => log.status === 'READING').length;
-    const totalPagesRead = stats.reduce((sum, log) => sum + log.currentPage, 0);
+    const totalBooks = logs.length;
+    const finishedBooks = logs.filter(log => log.status === 'FINISHED').length;
+    const currentlyReading = logs.filter(log => log.status === 'READING').length;
+    
+    // Calculate total pages from sessions for accuracy, or use currentPage from logs
+    const totalPagesRead = logs.reduce((sum, log) => sum + (log.currentPage || 0), 0);
+    
+    // Calculate total reading time from sessions
+    let totalMinutes = 0;
+    logs.forEach(log => {
+      log.sessions.forEach(session => {
+        totalMinutes += session.minutesRead || 0;
+      });
+    });
 
     return {
       totalBooks,
       finishedBooks,
       currentlyReading,
       totalPagesRead,
-      recentBooks: stats.slice(0, 5).map(log => ({
+      totalHours: Math.round(totalMinutes / 60),
+      recentBooks: logs.slice(0, 5).map(log => ({
         title: log.book.title,
         author: log.book.author,
         status: log.status,
@@ -261,5 +274,30 @@ export class FriendService {
     }
 
     return { status: followRecord.status };
+  }
+
+  async searchUsers(query: string, currentUserId: string) {
+    return await prisma.user.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { username: { contains: query, mode: 'insensitive' } },
+              { id: query }
+            ]
+          },
+          {
+            id: { not: currentUserId }
+          }
+        ]
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatar: true
+      },
+      take: 10
+    });
   }
 }

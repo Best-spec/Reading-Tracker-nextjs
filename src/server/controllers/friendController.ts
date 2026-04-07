@@ -189,3 +189,26 @@ export const checkFriendStatus = async (req: AuthenticatedRequest, res: Response
     res.status(500).json({ message: error.message });
   }
 };
+
+export const searchUsers = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { q } = req.query;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    if (!q || typeof q !== 'string') {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
+
+    const users = await friendService.searchUsers(q, userId);
+    res.json({
+      message: 'Users searched successfully',
+      data: users
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
