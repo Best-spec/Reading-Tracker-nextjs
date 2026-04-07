@@ -22,7 +22,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl animate-in fade-in duration-500">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Welcome Section */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900">
