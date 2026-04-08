@@ -48,7 +48,7 @@ export default function TimerPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl animate-in fade-in duration-500">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Reading Timer</h2>
         <p className="text-gray-500 mt-1">Focus on your reading and track your progress automatically</p>
@@ -60,9 +60,9 @@ export default function TimerPage() {
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 relative overflow-hidden">
             {/* Background Accent */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
-            
+
             <div className="relative z-10">
-              <BookSelector 
+              <BookSelector
                 selectedBook={selectedBook}
                 setSelectedBook={setSelectedBook}
                 section={section}
@@ -72,14 +72,14 @@ export default function TimerPage() {
               />
 
               <div className="flex flex-col items-center justify-center py-12">
-                <TimerDisplay 
+                <TimerDisplay
                   elapsedTime={elapsedTime}
                   isRunning={isRunning}
                   isPaused={isPaused}
                   selectedBook={selectedBook}
                 />
 
-                <TimerControls 
+                <TimerControls
                   isRunning={isRunning}
                   isPaused={isPaused}
                   selectedBook={selectedBook}
@@ -99,14 +99,14 @@ export default function TimerPage() {
                   <div className="flex-1 text-center md:text-left">
                     <h4 className="text-xl font-bold text-gray-900">{currentBook.title}</h4>
                     <p className="text-gray-500 text-sm">{currentBook.author}</p>
-                    
+
                     <div className="mt-4 space-y-2 max-w-sm mx-auto md:mx-0">
                       <div className="flex justify-between items-end text-xs font-bold text-gray-500 uppercase tracking-wider">
                         <span>Progress</span>
                         <span className="text-blue-600">{currentBook.currentPage || 0} / {currentBook.totalPages} Pages</span>
                       </div>
                       <div className="w-full bg-blue-100 rounded-full h-2 overflow-hidden">
-                        <div 
+                        <div
                           className="bg-blue-600 h-full transition-all duration-1000 ease-out"
                           style={{ width: `${progressPercentage}%` }}
                         />
@@ -120,7 +120,7 @@ export default function TimerPage() {
         </div>
 
         {/* Sidebar Stats */}
-        <TimerSidebar 
+        <TimerSidebar
           sessions={sessions}
           books={books}
           todayStats={todayStats}
@@ -129,7 +129,7 @@ export default function TimerPage() {
 
       {/* Stop Session Modal Overlay */}
       {showStopModal && (
-        <StopSessionModal 
+        <StopSessionModal
           elapsedTime={elapsedTime}
           pagesReadInput={pagesReadInput}
           setPagesReadInput={setPagesReadInput}

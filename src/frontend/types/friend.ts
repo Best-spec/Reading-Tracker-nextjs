@@ -3,6 +3,9 @@ import { User } from './user'
 export interface Friend extends User {
   status: 'ONLINE' | 'OFFLINE' | 'READING'
   currentlyReading?: string
+  isOnline: boolean
+  booksRead?: number
+  readingStreak?: number
 }
 
 export interface FriendRequest {
