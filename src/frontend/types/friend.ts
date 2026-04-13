@@ -1,7 +1,7 @@
 import { User } from './user'
 
 export interface Friend extends User {
-  status: 'ONLINE' | 'OFFLINE' | 'READING'
+  status: 'ONLINE' | 'OFFLINE' | 'READING' | 'DO_NOT_DISTURB' | 'AWAY'
   currentlyReading?: string
   isOnline: boolean
   booksRead?: number
