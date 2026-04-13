@@ -12,6 +12,17 @@ export function useFriends() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Friend[]>([])
   const [loading, setLoading] = useState(true)
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  
+  // Pagination state
+  const [page, setPage] = useState(1)
+  const [hasMoreFriends, setHasMoreFriends] = useState(true)
+  const limit = 20
+  
+  const showMessage = useCallback((text: string, type: 'success' | 'error') => {
+    setMessage({ text, type })
+    setTimeout(() => setMessage(null), 3000)
+  }, [])
 
   const loadFriendsData = useCallback(async () => {
     try {
@@ -22,7 +33,7 @@ export function useFriends() {
       }
 
       const [friendsData, requestsData, sentRequestsData] = await Promise.all([
-        friendService.getFriends(),
+        friendService.getFriends(1, limit),
         friendService.getFriendRequests(),
         friendService.getSentRequests()
       ])
@@ -32,14 +43,43 @@ export function useFriends() {
       const uniqueSentRequests = Array.from(new Map(sentRequestsData.map((r: FriendRequest) => [r.id, r])).values());
       
       setFriends(uniqueFriends)
+      setHasMoreFriends(uniqueFriends.length >= limit)
+      
       setFriendRequests(uniqueRequests)
       setPendingRequests(uniqueSentRequests)
     } catch (error) {
       console.error('Failed to load friends/requests:', error)
+      showMessage('โหลดข้อมูลเพื่อนล้มเหลว กรุณาลองใหม่อีกครั้ง', 'error')
     } finally {
       setLoading(false)
     }
   }, [])
+
+  const loadMoreFriends = useCallback(async () => {
+    if (!hasMoreFriends || loading) return;
+    
+    try {
+      const nextPage = page + 1;
+      const newFriends = await friendService.getFriends(nextPage, limit);
+      
+      if (newFriends.length > 0) {
+        setFriends(prev => {
+          // Avoid duplicates
+          const currentMap = new Map(prev.map(f => [f.id, f]));
+          newFriends.forEach(f => currentMap.set(f.id, f));
+          return Array.from(currentMap.values());
+        })
+        setPage(nextPage)
+      }
+      
+      if (newFriends.length < limit) {
+        setHasMoreFriends(false)
+      }
+    } catch (error) {
+      console.error('Failed to load more friends:', error)
+      showMessage('โหลดรายชื่อเพิ่มเติมขัดข้อง', 'error')
+    }
+  }, [page, hasMoreFriends, loading, showMessage])
 
   const handleSearch = useCallback(async (query: string) => {
     console.log('--- Search Flow Started ---')
@@ -59,13 +99,13 @@ export function useFriends() {
       const uniqueResults = Array.from(new Map(results.map((f: Friend) => [f.id, f])).values());
       
       if (uniqueResults.length === 0) {
-        alert('ไม่พบผู้ใช้ที่ค้นหา')
+        showMessage('ไม่พบผู้ใช้ที่ค้นหา', 'error')
       }
       
       setSearchResults(uniqueResults)
     } catch (error) {
       console.error('Search error in handleSearch:', error)
-      alert('เกิดข้อผิดพลาดในการค้นหา: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      showMessage('เกิดข้อผิดพลาดในการค้นหา: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error')
     } finally {
       console.log('--- Search Flow Ended ---')
     }
@@ -80,12 +120,12 @@ export function useFriends() {
       const updatedPending = await friendService.getSentRequests()
       setPendingRequests(updatedPending)
       
-      alert('ส่งคำขอเป็นเพื่อนเรียบร้อยแล้ว!')
+      showMessage('ส่งคำขอเป็นเพื่อนเรียบร้อยแล้ว!', 'success')
       setSearchResults(prev => prev.filter(u => u.id !== userId))
       return true
     } catch (error) {
       console.error('Add friend error:', error)
-      alert('ไม่สามารถส่งคำขอได้: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      showMessage('ไม่สามารถส่งคำขอได้: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error')
       return false
     }
   }, [])
@@ -98,11 +138,12 @@ export function useFriends() {
       if (request) {
         const newFriend: Friend = {
           ...(request.from as unknown as Friend),
-          status: 'OFFLINE',
-          isOnline: false
+          status: request.from?.status || 'OFFLINE',
+          isOnline: request.from?.status === 'ONLINE' || request.from?.status === 'READING'
         }
         setFriends(prev => [...prev, newFriend])
         setFriendRequests(prev => prev.filter(r => r.id !== requestId))
+        showMessage('ยอมรับคำขอเป็นเพื่อนแล้ว', 'success')
       }
       return true
     } catch (error) {
@@ -159,11 +200,14 @@ export function useFriends() {
     setActiveTab,
     loading,
     handleSearch,
+    loadMoreFriends,
+    hasMoreFriends,
     addFriend,
     acceptRequest,
     declineRequest,
     removeFriend,
     cancelRequest,
+    message,
     onlineFriends: friends.filter(f => f.isOnline)
   }
 }

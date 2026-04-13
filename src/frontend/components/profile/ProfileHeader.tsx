@@ -10,6 +10,7 @@ interface ProfileHeaderProps {
   setEditForm: React.Dispatch<React.SetStateAction<Partial<UserProfile>>>;
   handleEditProfile: () => void;
   handleSaveProfile: () => void;
+  isOwnProfile?: boolean;
 }
 
 export function ProfileHeader({
@@ -19,7 +20,8 @@ export function ProfileHeader({
   setIsEditing,
   setEditForm,
   handleEditProfile,
-  handleSaveProfile
+  handleSaveProfile,
+  isOwnProfile = true
 }: ProfileHeaderProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', { 
@@ -40,9 +42,11 @@ export function ProfileHeader({
               alt={user.displayName}
               className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
             />
-            <button className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors">
-              <Camera className="w-4 h-4" />
-            </button>
+            {isOwnProfile && (
+              <button className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors">
+                <Camera className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mt-4">{user.displayName}</h1>
           <p className="text-gray-500">@{user.username}</p>
@@ -150,13 +154,15 @@ export function ProfileHeader({
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={handleEditProfile}
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-1"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Edit Profile
-                </button>
+                {isOwnProfile && (
+                  <button
+                    onClick={handleEditProfile}
+                    className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Edit Profile
+                  </button>
+                )}
               </div>
               <p className="text-gray-700 leading-relaxed">{user.bio}</p>
             </div>

@@ -2,8 +2,8 @@ import { request } from './base'
 import { FriendActivity } from '@/types/friend'
 
 export const friendsApi = {
-  async getFriends() {
-    return await request('/api/friends')
+  async getFriends(page: number = 1, limit: number = 20) {
+    return await request(`/api/friends?page=${page}&limit=${limit}`)
   },
 
   async searchFriends(query: string) {

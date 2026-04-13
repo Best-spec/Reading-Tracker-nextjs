@@ -98,7 +98,10 @@ export const getFriends = async (req: AuthenticatedRequest, res: Response) => {
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    const friends = await friendService.getFriends(userId);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const friends = await friendService.getFriends(userId, page, limit);
     res.json({
       message: 'Friends retrieved successfully',
       data: friends
@@ -248,5 +251,26 @@ export const cancelFriendRequest = async (req: AuthenticatedRequest, res: Respon
     res.json({ message: 'Friend request cancelled successfully' });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const getFriendProfile = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || Array.isArray(id)) {
+      return res.status(400).json({ message: 'Target user ID is required' });
+    }
+
+    const profile = await friendService.getFriendProfile(id);
+    res.json({
+      message: 'Friend profile retrieved successfully',
+      data: profile
+    });
+  } catch (error: any) {
+    if (error.message === 'Friend not found') {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: error.message });
   }
 };

@@ -14,6 +14,7 @@ export function FriendsList({ friends, onRemove }: FriendsListProps) {
     switch (status) {
       case 'ONLINE': return 'bg-green-500'
       case 'READING': return 'bg-blue-500'
+      case 'DO_NOT_DISTURB': return 'bg-red-500'
       case 'AWAY': return 'bg-yellow-500'
       case 'OFFLINE': default: return 'bg-gray-400'
     }
@@ -46,7 +47,11 @@ export function FriendsList({ friends, onRemove }: FriendsListProps) {
               <div>
                 <p className="font-medium text-gray-900">{friend.username}</p>
                 <p className="text-sm text-gray-500">
-                  {friend.isOnline ? (friend.status === 'READING' ? 'Reading now' : 'Online') : 'Offline'}
+                  {friend.isOnline 
+                    ? (friend.status === 'READING' ? 'Reading now' 
+                      : friend.status === 'DO_NOT_DISTURB' ? 'Do Not Disturb'
+                      : 'Online') 
+                    : 'Offline'}
                 </p>
               </div>
             </div>
@@ -76,9 +81,12 @@ export function FriendsList({ friends, onRemove }: FriendsListProps) {
               <MessageCircle className="w-3 h-3" />
               Message
             </button>
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+            <a 
+              href={`/profile/${friend.id}`}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
+            >
               View Profile
-            </button>
+            </a>
           </div>
         </div>
       ))}

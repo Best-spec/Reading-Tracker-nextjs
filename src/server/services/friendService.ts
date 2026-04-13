@@ -147,7 +147,9 @@ export class FriendService {
     return { message: 'Friend removed successfully' };
   }
 
-  async getFriends(userId: string) {
+  async getFriends(userId: string, page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+
     const friends = await prisma.follows.findMany({
       where: {
         OR: [
@@ -178,7 +180,9 @@ export class FriendService {
             status: true
           }
         }
-      }
+      },
+      skip,
+      take: limit
     });
 
     const uniqueFriends = Array.from(new Map(friends.map(friend => {
@@ -201,7 +205,8 @@ export class FriendService {
             id: true,
             username: true,
             avatar: true,
-            email: true
+            email: true,
+            status: true
           }
         }
       }
@@ -226,7 +231,8 @@ export class FriendService {
             id: true,
             username: true,
             avatar: true,
-            email: true
+            email: true,
+            status: true
           }
         }
       }
@@ -269,7 +275,37 @@ export class FriendService {
 
   async getOnlineFriends(userId: string) {
     const friends = await this.getFriends(userId);
-    return friends.filter(friend => friend.status === 'ONLINE');
+    return friends.filter(friend => friend.status === 'ONLINE' || friend.status === 'READING');
+  }
+
+  async getFriendProfile(friendId: string) {
+    const friend = await prisma.user.findUnique({
+      where: { id: friendId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatar: true,
+        displayName: true,
+        bio: true,
+        location: true,
+        website: true,
+        status: true,
+        createdAt: true
+      }
+    });
+
+    if (!friend) {
+      throw new Error('Friend not found');
+    }
+
+    const stats = await this.getFriendReadingStats(friendId);
+
+    return {
+      ...friend,
+      stats,
+      isOnline: friend.status !== 'OFFLINE'
+    };
   }
 
   async getFriendReadingStats(friendId: string) {
@@ -303,11 +339,15 @@ export class FriendService {
       totalPagesRead,
       totalHours: Math.round(totalMinutes / 60),
       recentBooks: logs.slice(0, 5).map(log => ({
+        id: log.bookId,
         title: log.book.title,
         author: log.book.author,
+        coverUrl: log.book.coverUrl || null,
         status: log.status,
-        currentPage: log.currentPage,
-        totalPages: log.book.totalPages
+        pagesRead: log.currentPage || 0,
+        totalPages: log.book.totalPages || 1,
+        rating: log.book.rating || null,
+        finishedDate: log.finishedAt ? log.finishedAt.toISOString() : null
       }))
     };
   }
@@ -348,7 +388,8 @@ export class FriendService {
         id: true,
         username: true,
         email: true,
-        avatar: true
+        avatar: true,
+        status: true
       },
       take: 10
     });

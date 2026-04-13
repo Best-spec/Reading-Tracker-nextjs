@@ -2,10 +2,10 @@ import { friendsApi } from './api/friends'
 import { Friend, FriendRequest, FriendActivity } from '@/types/friend'
 
 export const friendService = {
-  async getFriends(): Promise<Friend[]> {
-    console.log('--- friendService.getFriends Flow Started ---')
+  async getFriends(page: number = 1, limit: number = 20): Promise<Friend[]> {
+    console.log(`--- friendService.getFriends Flow Started (page: ${page}) ---`)
     try {
-      const response = await friendsApi.getFriends()
+      const response = await friendsApi.getFriends(page, limit)
       const data = Array.isArray(response) ? response : (response?.data || response?.friends || [])
       
       // Fetch stats for each friend
@@ -15,11 +15,12 @@ export const friendService = {
           const stats = statsResponse?.data || statsResponse
           return {
             ...friend,
+            isOnline: friend.status !== 'OFFLINE',
             booksRead: stats.totalBooks || 0,
             readingStreak: stats.totalHours || 0 // Using totalHours as a placeholder for now
           }
         } catch (e) {
-          return { ...friend, booksRead: 0, readingStreak: 0 }
+          return { ...friend, isOnline: friend.status !== 'OFFLINE', booksRead: 0, readingStreak: 0 }
         }
       }))
 

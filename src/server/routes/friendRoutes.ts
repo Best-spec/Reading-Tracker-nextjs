@@ -11,7 +11,8 @@ import {
   checkFriendStatus,
   searchUsers,
   getSentRequests,
-  cancelFriendRequest
+  cancelFriendRequest,
+  getFriendProfile
 } from '../controllers/friendController.js';
 import { middleware } from '../middleware/authMiddleware.js';
 
@@ -28,6 +29,7 @@ router.delete('/cancel/:id', middleware, cancelFriendRequest);
 router.get('/search', middleware, searchUsers);
 router.get('/online', middleware, getOnlineFriends);
 router.get('/:id/stats', middleware, getFriendReadingStats);
+router.get('/:id/profile', middleware, getFriendProfile);
 router.get('/status/:id', middleware, checkFriendStatus);
 
 export default router;

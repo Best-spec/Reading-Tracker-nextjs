@@ -29,13 +29,20 @@ export function OnlineFriendsList({ onlineFriends }: OnlineFriendsListProps) {
                 alt={friend.username}
                 className="w-12 h-12 rounded-full"
               />
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+              <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                friend.status === 'READING' ? 'bg-blue-500' : 
+                friend.status === 'DO_NOT_DISTURB' ? 'bg-red-500' : 'bg-green-500'
+              }`}></div>
             </div>
             <div>
               <p className="font-medium text-gray-900">{friend.username}</p>
-              <p className="text-sm text-green-600 flex items-center gap-1">
+              <p className={`text-sm flex items-center gap-1 ${
+                friend.status === 'READING' ? 'text-blue-600' : 
+                friend.status === 'DO_NOT_DISTURB' ? 'text-red-600' : 'text-green-600'
+              }`}>
                 <Circle className="w-2 h-2 fill-current" />
-                Online now
+                {friend.status === 'READING' ? 'Reading now' : 
+                 friend.status === 'DO_NOT_DISTURB' ? 'Do Not Disturb' : 'Online now'}
               </p>
             </div>
           </div>
