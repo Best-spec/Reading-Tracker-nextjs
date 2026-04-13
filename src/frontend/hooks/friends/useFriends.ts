@@ -138,8 +138,8 @@ export function useFriends() {
       if (request) {
         const newFriend: Friend = {
           ...(request.from as unknown as Friend),
-          status: request.from?.status || 'OFFLINE',
-          isOnline: request.from?.status === 'ONLINE' || request.from?.status === 'READING'
+          status: (request.from?.status as Friend['status']) || 'OFFLINE',
+          isOnline: request.from?.status !== 'OFFLINE'
         }
         setFriends(prev => [...prev, newFriend])
         setFriendRequests(prev => prev.filter(r => r.id !== requestId))
