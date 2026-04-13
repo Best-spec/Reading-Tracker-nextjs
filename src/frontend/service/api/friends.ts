@@ -43,6 +43,16 @@ export const friendsApi = {
     return await request(`/api/friends/${friendId}/stats`)
   },
 
+  async getSentRequests() {
+    return await request('/api/friends/sent')
+  },
+
+  async cancelFriendRequest(followerId: string) {
+    return await request(`/api/friends/cancel/${followerId}`, {
+      method: 'DELETE',
+    })
+  },
+
   async getActivity(): Promise<FriendActivity[]> {
     try {
       return await request('/api/friends/activity')

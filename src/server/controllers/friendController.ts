@@ -212,3 +212,41 @@ export const searchUsers = async (req: AuthenticatedRequest, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getSentRequests = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    const sentRequests = await friendService.getSentRequests(userId);
+    res.json({
+      message: 'Sent requests retrieved successfully',
+      data: sentRequests
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const cancelFriendRequest = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const requesterId = req.user?.id;
+
+    if (!requesterId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    if (!id || Array.isArray(id)) {
+      return res.status(400).json({ message: 'Target user ID is required' });
+    }
+
+    await friendService.cancelFriendRequest(requesterId, id);
+    res.json({ message: 'Friend request cancelled successfully' });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

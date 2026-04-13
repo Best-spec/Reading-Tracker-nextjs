@@ -1,27 +1,39 @@
 import { useState, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { friendService } from '@/service/friendService'
 import { Friend, FriendRequest } from '@/types/friend'
 
 export function useFriends() {
-  const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'online'>('friends')
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'online' | 'pending'>('friends')
   const [friends, setFriends] = useState<Friend[]>([])
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([])
+  const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Friend[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadFriendsData = useCallback(async () => {
     try {
-      const [friendsData, requestsData] = await Promise.all([
+      const token = localStorage.getItem('readflow_token')
+      if (!token) {
+        router.push('/login')
+        return
+      }
+
+      const [friendsData, requestsData, sentRequestsData] = await Promise.all([
         friendService.getFriends(),
-        friendService.getFriendRequests()
+        friendService.getFriendRequests(),
+        friendService.getSentRequests()
       ])
       // Ensure uniqueness using a Map by ID
       const uniqueFriends = Array.from(new Map(friendsData.map((f: Friend) => [f.id, f])).values());
       const uniqueRequests = Array.from(new Map(requestsData.map((r: FriendRequest) => [r.id, r])).values());
+      const uniqueSentRequests = Array.from(new Map(sentRequestsData.map((r: FriendRequest) => [r.id, r])).values());
       
       setFriends(uniqueFriends)
       setFriendRequests(uniqueRequests)
+      setPendingRequests(uniqueSentRequests)
     } catch (error) {
       console.error('Failed to load friends/requests:', error)
     } finally {
@@ -63,6 +75,11 @@ export function useFriends() {
     console.log('Sending friend request to:', userId)
     try {
       await friendService.sendFriendRequest(userId)
+      
+      // Immediately fetch and update pending requests to reflect the new state
+      const updatedPending = await friendService.getSentRequests()
+      setPendingRequests(updatedPending)
+      
       alert('ส่งคำขอเป็นเพื่อนเรียบร้อยแล้ว!')
       setSearchResults(prev => prev.filter(u => u.id !== userId))
       return true
@@ -116,6 +133,17 @@ export function useFriends() {
     }
   }, [])
 
+  const cancelRequest = useCallback(async (requestId: string) => {
+    try {
+      await friendService.cancelFriendRequest(requestId)
+      setPendingRequests(prev => prev.filter(r => r.id !== requestId))
+      return true
+    } catch (error) {
+      console.error('Cancel request error:', error)
+      return false
+    }
+  }, [])
+
   useEffect(() => {
     loadFriendsData()
   }, [loadFriendsData])
@@ -123,6 +151,7 @@ export function useFriends() {
   return {
     friends,
     friendRequests,
+    pendingRequests,
     searchResults,
     searchQuery,
     setSearchQuery,
@@ -134,6 +163,7 @@ export function useFriends() {
     acceptRequest,
     declineRequest,
     removeFriend,
+    cancelRequest,
     onlineFriends: friends.filter(f => f.isOnline)
   }
 }

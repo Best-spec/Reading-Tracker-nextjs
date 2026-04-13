@@ -51,6 +51,16 @@ export const friendService = {
     }
   },
 
+  async getSentRequests(): Promise<FriendRequest[]> {
+    try {
+      const response = await friendsApi.getSentRequests()
+      return Array.isArray(response) ? response : (response?.data || [])
+    } catch (error) {
+      console.error('Failed to fetch sent requests:', error)
+      return []
+    }
+  },
+
   async searchUsers(query: string): Promise<Friend[]> {
     console.log('--- friendService.searchUsers ---')
     console.log('Query:', query)
@@ -85,5 +95,11 @@ export const friendService = {
 
   async removeFriend(friendId: string) {
     return await friendsApi.removeFriend(friendId)
+  },
+
+  async cancelFriendRequest(requestId: string) {
+    if (!requestId) return;
+    const followingId = requestId.includes('_') ? requestId.split('_')[1] : requestId
+    return await friendsApi.cancelFriendRequest(followingId)
   }
 }

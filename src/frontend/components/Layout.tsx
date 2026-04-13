@@ -67,6 +67,20 @@ export default function Layout({ children }: LayoutProps) {
     fetchUser()
   }, [pathname])
 
+  useEffect(() => {
+    const handleProfileUpdate = (event: CustomEvent) => {
+      if (event.detail) {
+        setUser(event.detail)
+      }
+    }
+    
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener)
+    
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener)
+    }
+  }, [])
+
   const handleLogout = () => {
     localStorage.removeItem('readflow_token')
     localStorage.removeItem('readflow_profile')

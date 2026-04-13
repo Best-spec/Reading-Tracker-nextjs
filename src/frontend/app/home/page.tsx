@@ -5,7 +5,6 @@ import { StatsGrid } from '@/components/home/StatsGrid'
 import { ContinueReading } from '@/components/home/ContinueReading'
 import { QuickActions } from '@/components/home/QuickActions'
 import { FriendsActivity } from '@/components/home/FriendsActivity'
-import { Achievements } from '@/components/home/Achievements'
 
 export default function HomePage() {
   const { stats, books, friendActivity, user, loading } = useHome()
@@ -64,7 +63,6 @@ export default function HomePage() {
         <div className="space-y-6">
           <QuickActions />
           <FriendsActivity activities={friendActivity} />
-          <Achievements />
         </div>
       </div>
     </div>

@@ -6,12 +6,14 @@ import { FriendsSearch } from '@/components/friends/FriendsSearch'
 import { FriendTabs } from '@/components/friends/FriendTabs'
 import { FriendsList } from '@/components/friends/FriendsList'
 import { FriendRequestsList } from '@/components/friends/FriendRequestsList'
+import { PendingRequestsList } from '@/components/friends/PendingRequestsList'
 import { OnlineFriendsList } from '@/components/friends/OnlineFriendsList'
 
 export default function FriendsPage() {
   const {
     friends,
     friendRequests,
+    pendingRequests,
     searchResults,
     searchQuery,
     setSearchQuery,
@@ -23,6 +25,7 @@ export default function FriendsPage() {
     acceptRequest,
     declineRequest,
     removeFriend,
+    cancelRequest,
     onlineFriends
   } = useFriends()
 
@@ -50,9 +53,10 @@ export default function FriendsPage() {
       />
 
       <FriendTabs
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        activeTab={activeTab as any}
+        setActiveTab={setActiveTab as any}
         requestCount={friendRequests.length}
+        pendingCount={pendingRequests.length}
         onlineCount={onlineFriends.length}
       />
 
@@ -66,6 +70,13 @@ export default function FriendsPage() {
             requests={friendRequests}
             onAccept={acceptRequest}
             onDecline={declineRequest}
+          />
+        )}
+
+        {activeTab === 'pending' && (
+          <PendingRequestsList
+            requests={pendingRequests}
+            onCancel={cancelRequest}
           />
         )}
 

@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { User } from "../types/user.js";
 import { clear } from "node:console";
-import {prisma} from "../prisma.js";
+import { prisma } from "../prisma.js";
 
 
 let users: User[] = [];
@@ -51,7 +51,7 @@ export const authservices = {
         }
 
         const payload = { id: user.id, username: user.username };
-        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
 
         console.log('เข้าสู่ระบบสำเร็จ email:', user.username);
         return { user, token };

@@ -214,6 +214,59 @@ export class FriendService {
     }));
   }
 
+  async getSentRequests(userId: string) {
+    const requests = await prisma.follows.findMany({
+      where: {
+        followerId: userId,
+        status: FriendStatus.PENDING
+      },
+      include: {
+        following: {
+          select: {
+            id: true,
+            username: true,
+            avatar: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    return requests.map(req => ({
+      id: req.followerId + '_' + req.followingId,
+      to: req.following,
+      createdAt: new Date().toISOString()
+    }));
+  }
+
+  async cancelFriendRequest(requesterId: string, targetId: string) {
+    const followRequest = await prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: requesterId,
+          followingId: targetId
+        }
+      }
+    });
+
+    if (!followRequest) {
+      throw new Error('Friend request not found');
+    }
+
+    if (followRequest.status !== FriendStatus.PENDING) {
+      throw new Error('Cannot cancel a request that is not pending');
+    }
+
+    return await prisma.follows.delete({
+      where: {
+        followerId_followingId: {
+          followerId: requesterId,
+          followingId: targetId
+        }
+      }
+    });
+  }
+
   async getOnlineFriends(userId: string) {
     const friends = await this.getFriends(userId);
     return friends.filter(friend => friend.status === 'ONLINE');
