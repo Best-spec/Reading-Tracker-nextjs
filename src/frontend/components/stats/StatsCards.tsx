@@ -1,5 +1,5 @@
 import React from 'react'
-import { StatsData } from '@/service/statsService'
+import { StatsData } from '@/types/stats'
 
 interface StatsCardsProps {
   stats: StatsData

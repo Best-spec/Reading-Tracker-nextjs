@@ -1,6 +1,6 @@
 import React from 'react'
 import { TrendingUp, PieChart, BarChart3, Flame, Calendar } from 'lucide-react'
-import { ChartData, StatsData } from '@/service/statsService'
+import { ChartData, StatsData } from '@/types/stats'
 
 interface StatsChartsProps {
   trendData: ChartData | null
