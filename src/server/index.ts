@@ -19,7 +19,7 @@ const onlineStatusService = new OnlineStatusService(server);
 initializeOnlineStatusRoutes(onlineStatusService);
 
 app.use(cors({
-    origin: 'http://127.0.0.1:3000',
+    origin: ['http://127.0.0.1:3000', 'https://social-reading-tracker-2me1z2t9d-best-specs-projects.vercel.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
